@@ -14,6 +14,7 @@
 // @grant        GM_addStyle
 // @grant        GM_notification
 // @grant        GM_setClipboard
+// @grant        GM_xmlhttpRequest
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @run-at       document-start
 // ==/UserScript==
@@ -1521,14 +1522,24 @@
 
                     console.log(`📥 [ZIP] Téléchargement ${i + 1}/${total}: ${fileName}`);
 
-                    // Télécharger le fichier
-                    const response = await fetch(url);
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-
-                    const blob = await response.blob();
+                    // Télécharger le fichier avec GM_xmlhttpRequest (contourne CORS)
+                    const blob = await new Promise((resolve, reject) => {
+                        GM_xmlhttpRequest({
+                            method: 'GET',
+                            url: url,
+                            responseType: 'blob',
+                            onload: (response) => {
+                                if (response.status === 200) {
+                                    resolve(response.response);
+                                } else {
+                                    reject(new Error(`HTTP ${response.status}`));
+                                }
+                            },
+                            onerror: (error) => {
+                                reject(new Error('Erreur réseau'));
+                            }
+                        });
+                    });
 
                     // Ajouter au ZIP
                     zip.file(fileName, blob);
