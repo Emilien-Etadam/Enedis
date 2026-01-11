@@ -1418,13 +1418,14 @@
             console.log(`📦 [ZIP] Génération du fichier (${reussis} réussis, ${echoues} échoués)`);
 
             try {
+                // Pas de compression car les Excel sont déjà compressés
                 const zipBlob = await zip.generateAsync({
                     type: 'blob',
-                    compression: 'DEFLATE',
-                    compressionOptions: { level: 6 }
+                    compression: 'STORE'  // Aucune compression pour être plus rapide
                 }, (metadata) => {
                     const progression = Math.round(metadata.percent);
-                    this.updateStatus(`📦 Compression du ZIP... ${progression}%`);
+                    console.log(`📦 [ZIP] Génération: ${progression}%`);
+                    this.updateStatus(`📦 Création du ZIP... ${progression}%`);
                 });
 
                 // Télécharger le ZIP
