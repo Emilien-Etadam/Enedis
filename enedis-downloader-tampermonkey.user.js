@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.5
+// @name         Enedis - Téléchargement Auto Historique v5.6
 // @namespace    http://tampermonkey.net/
-// @version      5.5
-// @description  Détection IDs : Bouton forcé + Saisie manuelle (Network pas nécessaire)
+// @version      5.6
+// @description  Détection IDs : Bouton forcé + Saisie manuelle (Fix: une seule fenêtre)
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
 // @match        https://mon-compte-particulier.enedis.fr/*
@@ -19,6 +19,14 @@
 
 (function() {
     'use strict';
+
+    // ⚠️ NE S'EXÉCUTER QUE DANS LE FRAME PRINCIPAL, PAS DANS LES IFRAMES
+    if (window.self !== window.top) {
+        console.log('⚠️ [ENEDIS] Script dans un iframe, skip');
+        return;
+    }
+
+    console.log('✅ [ENEDIS] Script dans le frame principal');
 
     // Configuration
     let CONFIG = {
@@ -1386,7 +1394,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.4 démarré - Auto + Bouton manuel + Saisie');
+    console.log('⚡ [ENEDIS] Script v5.6 démarré - Une seule fenêtre');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt (UNE SEULE FOIS)
