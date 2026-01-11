@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Enedis - Téléchargement Auto Historique
 // @namespace    http://tampermonkey.net/
-// @version      5.8
+// @version      5.9
 // @description  Téléchargement ZIP unique + Détection IDs (plus besoin de sauvegarder un à un)
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
@@ -1434,9 +1434,17 @@
                 console.log('📦 [ZIP] Appel à generateAsync...');
 
                 // Utiliser un timeout pour éviter le blocage infini
+                console.log('📦 [ZIP] Début génération avec suivi de progression...');
+                const startTime = Date.now();
                 const zipBlobPromise = zip.generateAsync({
                     type: 'blob',
-                    compression: 'STORE'  // Aucune compression
+                    compression: 'STORE',  // Aucune compression
+                    streamFiles: false     // Désactiver streaming
+                }, function updateCallback(metadata) {
+                    // Callback de progression
+                    const percent = metadata.percent.toFixed(1);
+                    const currentFile = metadata.currentFile || 'finalisation';
+                    console.log(`📦 [ZIP] Génération: ${percent}% - ${currentFile}`);
                 });
 
                 const timeoutPromise = new Promise((_, reject) =>
@@ -1444,7 +1452,9 @@
                 );
 
                 const zipBlob = await Promise.race([zipBlobPromise, timeoutPromise]);
-
+                
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                console.log(`📦 [ZIP] generateAsync terminé en ${elapsed}s`);
                 console.log('📦 [ZIP] generateAsync terminé, taille du blob:', zipBlob.size);
 
                 // Télécharger le ZIP
@@ -1509,7 +1519,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.8 démarré + Logs améliorés - Téléchargement ZIP unique');
+    console.log('⚡ [ENEDIS] Script v5.9 démarré + Fix generateAsync - Téléchargement ZIP unique');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt (UNE SEULE FOIS)
