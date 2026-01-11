@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Enedis - Téléchargement Auto Historique
 // @namespace    http://tampermonkey.net/
-// @version      5.7
+// @version      5.8
 // @description  Téléchargement ZIP unique + Détection IDs (plus besoin de sauvegarder un à un)
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
@@ -1509,7 +1509,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.7 démarré - Téléchargement ZIP unique');
+    console.log('⚡ [ENEDIS] Script v5.8 démarré + Logs améliorés - Téléchargement ZIP unique');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt (UNE SEULE FOIS)
