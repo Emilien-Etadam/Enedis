@@ -1,12 +1,14 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.2
+// @name         Enedis - Téléchargement Auto Historique v5.3
 // @namespace    http://tampermonkey.net/
-// @version      5.2
-// @description  Détection auto IDs (DOM + réseau) + Saisie manuelle + Debug complet
+// @version      5.3
+// @description  Détection auto IDs (Blob URL + DOM + réseau) + Saisie manuelle
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
 // @match        https://mon-compte-particulier.enedis.fr/*
 // @match        https://apps.lincs.enedis.fr/*
+// @match        https://frontend-mes-mesures-prm-cloud.enedis.fr/*
+// @match        https://*.enedis.fr/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
@@ -543,24 +545,39 @@
         intercepterRequetes() {
             const self = this;
 
+            // Stocker les URLs des requêtes pour les lier aux Blobs
+            window._enedisRequestUrls = [];
+
             // Intercepter XMLHttpRequest
             const originalOpen = XMLHttpRequest.prototype.open;
+            const originalSend = XMLHttpRequest.prototype.send;
+
             XMLHttpRequest.prototype.open = function(method, url) {
+                this._enedisUrl = url;
                 if (typeof url === 'string') {
                     // Logger uniquement les URLs Enedis
                     if (url.includes('enedis') || url.includes('personnes') || url.includes('prms')) {
-                        console.log('🌐 [XHR]', url);
+                        console.log('🌐 [XHR OPEN]', url);
                     }
                     self.analyserURL(url, 'XMLHttpRequest');
                 }
                 return originalOpen.apply(this, arguments);
             };
 
+            XMLHttpRequest.prototype.send = function() {
+                if (this._enedisUrl) {
+                    window._enedisRequestUrls.push(this._enedisUrl);
+                    console.log('📤 [XHR SEND]', this._enedisUrl);
+                }
+                return originalSend.apply(this, arguments);
+            };
+
             // Intercepter fetch
             const originalFetch = window.fetch;
-            window.fetch = function(input) {
-                const url = typeof input === 'string' ? input : (input.url || '');
-                if (url) {
+            window.fetch = function(input, init) {
+                const url = typeof input === 'string' ? input : (input.url || input);
+                if (url && typeof url === 'string') {
+                    window._enedisRequestUrls.push(url);
                     // Logger uniquement les URLs Enedis
                     if (url.includes('enedis') || url.includes('personnes') || url.includes('prms')) {
                         console.log('🌐 [FETCH]', url);
@@ -570,7 +587,23 @@
                 return originalFetch.apply(this, arguments);
             };
 
-            console.log('🔍 [ENEDIS] Interception réseau activée (XHR, fetch, DOM)');
+            // Intercepter URL.createObjectURL pour tracer l'origine des Blobs
+            const originalCreateObjectURL = URL.createObjectURL;
+            URL.createObjectURL = function(blob) {
+                const blobUrl = originalCreateObjectURL.apply(this, arguments);
+                console.log('🎯 [BLOB CRÉÉ]', blobUrl);
+
+                // Chercher la dernière requête qui pourrait être liée à ce blob
+                if (window._enedisRequestUrls.length > 0) {
+                    const lastUrl = window._enedisRequestUrls[window._enedisRequestUrls.length - 1];
+                    console.log('   └─ Origine probable:', lastUrl);
+                    self.analyserURL(lastUrl, 'Blob (requête origine)');
+                }
+
+                return blobUrl;
+            };
+
+            console.log('🔍 [ENEDIS] Interception réseau activée (XHR, fetch, Blob, DOM)');
             console.log('🔍 [ENEDIS] Mode debug:', CONFIG.debugMode ? 'ON' : 'OFF');
             console.log('💡 [ENEDIS] ASTUCE: Lancez un téléchargement sur Enedis');
         }
@@ -1241,7 +1274,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.2 démarré - Détection DOM + réseau');
+    console.log('⚡ [ENEDIS] Script v5.3 démarré - Détection Blob + DOM + réseau');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt
