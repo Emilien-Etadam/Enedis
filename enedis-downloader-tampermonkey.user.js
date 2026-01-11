@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.1
+// @name         Enedis - Téléchargement Auto Historique v5.2
 // @namespace    http://tampermonkey.net/
-// @version      5.1
-// @description  Détection auto IDs + Saisie manuelle + Debug complet
+// @version      5.2
+// @description  Détection auto IDs (DOM + réseau) + Saisie manuelle + Debug complet
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
 // @match        https://mon-compte-particulier.enedis.fr/*
@@ -478,8 +478,66 @@
     class NetworkIDDetector {
         constructor() {
             this.detected = false;
+            this.checkIntervalId = null;
             this.intercepterRequetes();
+            this.surveillerDOM();
+            this.analyserPageActuelle();
             console.log('🔍 [ENEDIS] Détecteur initialisé');
+        }
+
+        analyserPageActuelle() {
+            // Analyser l'URL courante au cas où on serait déjà sur une page avec les IDs
+            const currentUrl = window.location.href;
+            this.analyserURL(currentUrl, 'URL courante');
+
+            // Vérifier aussi dans le localStorage/sessionStorage d'Enedis
+            try {
+                const storage = window.localStorage;
+                for (let i = 0; i < storage.length; i++) {
+                    const key = storage.key(i);
+                    const value = storage.getItem(key);
+                    if (value && typeof value === 'string') {
+                        this.analyserURL(value, 'localStorage');
+                    }
+                }
+            } catch (e) {
+                console.log('🔍 [ENEDIS] Impossible d\'accéder au localStorage');
+            }
+        }
+
+        surveillerDOM() {
+            const self = this;
+
+            // Observer les mutations du DOM pour détecter les liens créés dynamiquement
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeName === 'A' && node.href) {
+                            self.analyserURL(node.href, 'Lien ajouté');
+                        } else if (node.nodeName === 'IFRAME' && node.src) {
+                            self.analyserURL(node.src, 'iFrame ajouté');
+                        }
+                    });
+                });
+            });
+
+            // Observer le body
+            if (document.body) {
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            } else {
+                // Si le body n'existe pas encore, attendre
+                setTimeout(() => this.surveillerDOM(), 100);
+            }
+
+            // Vérifier périodiquement tous les liens de la page
+            this.checkIntervalId = setInterval(() => {
+                document.querySelectorAll('a[href*="personnes"], a[href*="donnees-energetiques"]').forEach((link) => {
+                    self.analyserURL(link.href, 'Lien existant');
+                });
+            }, 2000);
         }
 
         intercepterRequetes() {
@@ -512,9 +570,9 @@
                 return originalFetch.apply(this, arguments);
             };
 
-            console.log('🔍 [ENEDIS] Interception réseau activée');
+            console.log('🔍 [ENEDIS] Interception réseau activée (XHR, fetch, DOM)');
             console.log('🔍 [ENEDIS] Mode debug:', CONFIG.debugMode ? 'ON' : 'OFF');
-            console.log('💡 [ENEDIS] ASTUCE: Ouvrez Network (F12) et lancez un téléchargement sur Enedis');
+            console.log('💡 [ENEDIS] ASTUCE: Lancez un téléchargement sur Enedis');
         }
 
         analyserURL(url, source) {
@@ -526,11 +584,18 @@
             if (match && !this.detected) {
                 const [, personneId, prmId] = match;
 
-                console.log(`🎯 [ENEDIS] IDs DÉTECTÉS !`);
+                console.log(`🎯 [ENEDIS] IDs DÉTECTÉS depuis ${source} !`);
                 console.log(`   └─ Personne ID: ${personneId}`);
                 console.log(`   └─ PRM ID: ${prmId}`);
+                console.log(`   └─ URL: ${url.substring(0, 100)}...`);
 
                 this.detected = true; // Pour éviter de détecter plusieurs fois
+
+                // Arrêter la surveillance périodique
+                if (this.checkIntervalId) {
+                    clearInterval(this.checkIntervalId);
+                    this.checkIntervalId = null;
+                }
 
                 CONFIG.personneId = personneId;
                 CONFIG.prmId = prmId;
@@ -1176,7 +1241,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.1 démarré');
+    console.log('⚡ [ENEDIS] Script v5.2 démarré - Détection DOM + réseau');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt
