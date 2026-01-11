@@ -1252,11 +1252,17 @@
             const statusPersonne = document.getElementById('status-personne');
 
             if (CONFIG.personneId && CONFIG.prmId) {
-                statusPersonne.textContent = '✅ OK';
+                // Afficher l'ID (tronqué si trop long)
+                const idText = CONFIG.personneId.length > 12 ?
+                    CONFIG.personneId.substring(0, 12) + '...' :
+                    CONFIG.personneId;
+                statusPersonne.textContent = idText;
                 statusPersonne.className = 'enedis-id-value enedis-id-detected';
+                statusPersonne.title = `Personne: ${CONFIG.personneId}\nPRM: ${CONFIG.prmId}`;
             } else {
                 statusPersonne.textContent = 'Non détecté';
                 statusPersonne.className = 'enedis-id-value enedis-id-missing';
+                statusPersonne.title = '';
             }
         }
 
