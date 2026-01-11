@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.3
+// @name         Enedis - Téléchargement Auto Historique v5.4
 // @namespace    http://tampermonkey.net/
-// @version      5.3
-// @description  Détection auto IDs (Blob URL + DOM + réseau) + Saisie manuelle
+// @version      5.4
+// @description  Détection IDs : Auto + Bouton forcé + Saisie manuelle
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
 // @match        https://mon-compte-particulier.enedis.fr/*
@@ -1072,12 +1072,11 @@
             const idsDetectes = CONFIG.personneId && CONFIG.prmId;
             const guideHTML = !idsDetectes ? `
                 <div class="enedis-guide">
-                    <div class="enedis-guide-title">💡 Détection automatique</div>
-                    <div class="enedis-guide-step">Ouvrez DevTools (F12) → Network</div>
-                    <div class="enedis-guide-step">Cliquez sur "Télécharger" sur Enedis</div>
-                    <div class="enedis-guide-step">Les IDs seront détectés auto</div>
-                    <div style="margin-top: 10px; text-align: center;">
-                        <strong>OU</strong> cliquez sur "✏️ Saisie manuelle"
+                    <div class="enedis-guide-title">💡 Comment détecter vos IDs ?</div>
+                    <div class="enedis-guide-step">Sur Enedis, cliquez sur "Télécharger"</div>
+                    <div class="enedis-guide-step">Puis cliquez sur "🔍 Détecter IDs"</div>
+                    <div style="margin-top: 10px; font-size: 11px; opacity: 0.9;">
+                        Si ça ne fonctionne pas, utilisez "✏️ Saisie manuelle"
                     </div>
                 </div>
             ` : '';
@@ -1099,9 +1098,14 @@
                             <span class="enedis-id-value" id="status-prm">...</span>
                         </div>
                         ${!idsDetectes ? `
-                        <button id="btn-manual-id" style="width: 100%; margin-top: 12px; background: #10b981 !important; color: white !important;">
-                            ✏️ Saisie manuelle
-                        </button>
+                        <div class="enedis-btn-group" style="margin-top: 12px;">
+                            <button id="btn-detect-ids" style="background: #3b82f6 !important; color: white !important;">
+                                🔍 Détecter IDs
+                            </button>
+                            <button id="btn-manual-id" style="background: #10b981 !important; color: white !important;">
+                                ✏️ Saisie manuelle
+                            </button>
+                        </div>
                         ` : ''}
                     </div>
 
@@ -1149,9 +1153,117 @@
 
             if (!idsDetectes) {
                 document.getElementById('btn-manual-id').addEventListener('click', () => this.manualIDManager.ouvrir());
+                document.getElementById('btn-detect-ids').addEventListener('click', () => this.forcerDetection());
             }
 
             this.mettreAJourInterface();
+        }
+
+        forcerDetection() {
+            console.log('🔍 [ENEDIS] Forcer la détection des IDs...');
+            this.updateStatus('🔍 Recherche des IDs en cours...');
+
+            let idsDetectes = false;
+            const pattern = /personnes\/(\d+)\/prms\/(\d+)/;
+
+            // 1. Vérifier les requêtes stockées
+            if (window._enedisRequestUrls && window._enedisRequestUrls.length > 0) {
+                console.log(`📋 [ENEDIS] ${window._enedisRequestUrls.length} requête(s) interceptée(s)`);
+
+                for (let i = window._enedisRequestUrls.length - 1; i >= 0; i--) {
+                    const url = window._enedisRequestUrls[i];
+                    const match = url.match(pattern);
+                    if (match) {
+                        const [, personneId, prmId] = match;
+                        console.log('✅ [ENEDIS] Trouvé dans les requêtes:', personneId, prmId);
+
+                        CONFIG.personneId = personneId;
+                        CONFIG.prmId = prmId;
+                        GM_setValue('personneId', personneId);
+                        GM_setValue('prmId', prmId);
+
+                        idsDetectes = true;
+                        break;
+                    }
+                }
+            } else {
+                console.log('⚠️ [ENEDIS] Aucune requête interceptée');
+            }
+
+            // 2. Scanner les liens de la page
+            if (!idsDetectes) {
+                console.log('🔍 [ENEDIS] Scan des liens de la page...');
+                const links = document.querySelectorAll('a[href*="personnes"], a[href*="donnees"]');
+                console.log(`📋 [ENEDIS] ${links.length} lien(s) trouvé(s)`);
+
+                links.forEach(link => {
+                    if (!idsDetectes) {
+                        const match = link.href.match(pattern);
+                        if (match) {
+                            const [, personneId, prmId] = match;
+                            console.log('✅ [ENEDIS] Trouvé dans un lien:', personneId, prmId);
+
+                            CONFIG.personneId = personneId;
+                            CONFIG.prmId = prmId;
+                            GM_setValue('personneId', personneId);
+                            GM_setValue('prmId', prmId);
+
+                            idsDetectes = true;
+                        }
+                    }
+                });
+            }
+
+            // 3. Scanner le localStorage
+            if (!idsDetectes) {
+                console.log('🔍 [ENEDIS] Scan du localStorage...');
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        const value = localStorage.getItem(key);
+                        if (value && typeof value === 'string') {
+                            const match = value.match(pattern);
+                            if (match) {
+                                const [, personneId, prmId] = match;
+                                console.log('✅ [ENEDIS] Trouvé dans localStorage:', personneId, prmId);
+
+                                CONFIG.personneId = personneId;
+                                CONFIG.prmId = prmId;
+                                GM_setValue('personneId', personneId);
+                                GM_setValue('prmId', prmId);
+
+                                idsDetectes = true;
+                                break;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log('⚠️ [ENEDIS] Impossible d\'accéder au localStorage');
+                }
+            }
+
+            // Résultat
+            if (idsDetectes) {
+                this.mettreAJourInterface();
+                this.updateStatus('✅ IDs détectés avec succès !');
+
+                if (typeof GM_notification !== 'undefined') {
+                    GM_notification({
+                        title: '✅ IDs Enedis détectés !',
+                        text: `Personne: ${CONFIG.personneId}\nPRM: ${CONFIG.prmId}`,
+                        timeout: 5000
+                    });
+                }
+
+                // Recharger pour masquer le bouton
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                this.updateStatus('❌ Aucun ID détecté. Essayez la saisie manuelle.');
+                console.log('❌ [ENEDIS] Aucun ID trouvé. Vérifiez :');
+                console.log('   1. Avez-vous cliqué sur "Télécharger" sur Enedis ?');
+                console.log('   2. La console affiche-t-elle des requêtes [FETCH] ou [XHR] ?');
+                console.log('   3. Sinon, utilisez la saisie manuelle (bouton vert)');
+            }
         }
 
         toggleDebug() {
@@ -1274,7 +1386,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.3 démarré - Détection Blob + DOM + réseau');
+    console.log('⚡ [ENEDIS] Script v5.4 démarré - Auto + Bouton manuel + Saisie');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt
