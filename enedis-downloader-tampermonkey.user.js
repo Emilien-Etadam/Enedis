@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.7
+// @name         Enedis - Téléchargement Auto Historique
 // @namespace    http://tampermonkey.net/
 // @version      5.7
 // @description  Téléchargement ZIP unique + Détection IDs (plus besoin de sauvegarder un à un)
