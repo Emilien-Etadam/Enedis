@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.6
+// @name         Enedis - Téléchargement Auto Historique
 // @namespace    http://tampermonkey.net/
 // @version      5.6
 // @description  Détection IDs : Bouton forcé + Saisie manuelle (Fix: une seule fenêtre)
