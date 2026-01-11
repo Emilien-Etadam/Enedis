@@ -49,211 +49,127 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
-            padding: 24px;
+            background: #2d3748;
+            border-radius: 12px;
+            padding: 16px;
             z-index: 999999;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            min-width: 400px;
-            max-width: 450px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            width: 320px;
             color: white;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 13px;
         }
 
         #enedis-downloader h3 {
-            margin: 0 0 18px 0;
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
         }
 
         .enedis-section {
-            background: rgba(255,255,255,0.12);
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 16px;
-            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
         }
 
         .enedis-section-title {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: 600;
-            margin-bottom: 12px;
-            opacity: 0.95;
+            margin-bottom: 8px;
+            opacity: 0.7;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .enedis-id-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 8px 0;
-            font-size: 13px;
+            margin: 4px 0;
+            font-size: 12px;
         }
 
         .enedis-id-label {
-            opacity: 0.85;
-            font-weight: 500;
+            opacity: 0.7;
         }
 
         .enedis-id-value {
             font-family: 'Courier New', monospace;
-            font-weight: 700;
-            padding: 4px 10px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 6px;
-            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            font-size: 11px;
         }
 
         .enedis-id-detected {
             color: #4ade80;
-            animation: pulse 2s ease-in-out infinite;
         }
 
         .enedis-id-missing {
             color: #fbbf24;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .enedis-guide {
-            background: rgba(251, 191, 36, 0.2);
-            border-left: 4px solid #fbbf24;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            line-height: 1.6;
-            margin-bottom: 16px;
-        }
-
-        .enedis-guide-title {
-            font-weight: 700;
-            margin-bottom: 8px;
+        .enedis-btn-group {
             display: flex;
-            align-items: center;
             gap: 6px;
         }
 
-        .enedis-guide-step {
-            margin: 6px 0;
-            padding-left: 20px;
-            position: relative;
-        }
-
-        .enedis-guide-step::before {
-            content: "→";
-            position: absolute;
-            left: 4px;
-            font-weight: 700;
-        }
-
-        .enedis-btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
         #enedis-downloader button {
-            background: white;
-            color: #667eea;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 700;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
             flex: 1;
-            min-width: 110px;
         }
 
         #enedis-downloader button:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-        }
-
-        #enedis-downloader button:active:not(:disabled) {
-            transform: translateY(-1px);
+            background: rgba(255,255,255,0.25);
         }
 
         #enedis-downloader button:disabled {
-            background: rgba(255,255,255,0.25);
-            color: rgba(255,255,255,0.5);
+            opacity: 0.4;
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
 
         #enedis-progress {
-            margin-top: 16px;
-            font-size: 13px;
-            padding: 12px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            min-height: 24px;
-            font-weight: 500;
-        }
-
-        .enedis-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .enedis-stat-item {
-            background: rgba(255,255,255,0.08);
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .enedis-stat-value {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .enedis-stat-label {
+            margin-top: 10px;
             font-size: 11px;
-            opacity: 0.8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            min-height: 20px;
         }
 
         .enedis-minimize {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(255,255,255,0.2);
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.1);
             border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
             cursor: pointer;
             color: white;
-            font-size: 18px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
         }
 
         .enedis-minimize:hover {
-            background: rgba(255,255,255,0.3);
-            transform: rotate(180deg);
+            background: rgba(255,255,255,0.2);
         }
 
         #enedis-downloader.minimized {
-            padding: 16px;
-            min-width: auto;
+            padding: 12px;
+            width: auto;
         }
 
         #enedis-downloader.minimized .enedis-content {
@@ -488,61 +404,44 @@
 
         .enedis-mode-toggle {
             display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 4px;
+            margin-bottom: 8px;
         }
 
         .enedis-mode-btn {
             flex: 1;
-            padding: 10px;
-            border: 2px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
+            padding: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 11px;
+            text-align: center;
         }
 
         .enedis-mode-btn.active {
-            background: rgba(255,255,255,0.25);
-            border-color: rgba(255,255,255,0.8);
-            box-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
-
-        .enedis-mode-btn:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(16, 185, 129, 0.3);
+            border-color: #10b981;
         }
 
         .enedis-progress-bar {
             width: 100%;
-            height: 24px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 12px;
+            height: 18px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
             overflow: hidden;
-            margin-top: 12px;
-            position: relative;
+            margin-top: 8px;
         }
 
         .enedis-progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #10b981, #059669);
-            transition: width 0.3s ease;
+            background: #10b981;
+            transition: width 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .enedis-mode-info {
-            background: rgba(16, 185, 129, 0.2);
-            border-left: 4px solid #10b981;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            margin-bottom: 12px;
-            line-height: 1.5;
+            font-size: 10px;
+            font-weight: 600;
         }
     `);
 
@@ -1153,65 +1052,35 @@
 
             panel.innerHTML = `
                 <button class="enedis-minimize" id="btn-minimize">−</button>
-                <h3>⚡ Enedis Downloader</h3>
+                <h3>⚡ Enedis</h3>
                 <div class="enedis-content">
-                    ${guideHTML}
-
                     <div class="enedis-section">
-                        <div class="enedis-section-title">🆔 Identifiants</div>
                         <div class="enedis-id-row">
-                            <span class="enedis-id-label">Personne:</span>
+                            <span class="enedis-id-label">ID:</span>
                             <span class="enedis-id-value" id="status-personne">...</span>
                         </div>
-                        <div class="enedis-id-row">
-                            <span class="enedis-id-label">PRM:</span>
-                            <span class="enedis-id-value" id="status-prm">...</span>
-                        </div>
                         ${!idsDetectes ? `
-                        <div class="enedis-btn-group" style="margin-top: 12px;">
-                            <button id="btn-detect-ids" style="background: #3b82f6 !important; color: white !important;">
-                                🔍 Détecter IDs
-                            </button>
-                            <button id="btn-manual-id" style="background: #10b981 !important; color: white !important;">
-                                ✏️ Saisie manuelle
-                            </button>
+                        <div class="enedis-btn-group" style="margin-top: 8px;">
+                            <button id="btn-detect-ids">🔍 Détecter</button>
+                            <button id="btn-manual-id">✏️ Manuel</button>
                         </div>
                         ` : ''}
                     </div>
 
                     <div class="enedis-section">
-                        <div class="enedis-section-title">📊 Configuration</div>
-                        <div class="enedis-stats">
-                            <div class="enedis-stat-item">
-                                <div class="enedis-stat-value" id="stat-fichiers">${this.periodes.length}</div>
-                                <div class="enedis-stat-label">Fichiers</div>
-                            </div>
-                            <div class="enedis-stat-item">
-                                <div class="enedis-stat-value">${CONFIG.intervalleJours}j</div>
-                                <div class="enedis-stat-label">Intervalle</div>
-                            </div>
+                        <div class="enedis-id-row">
+                            <span class="enedis-id-label">Fichiers:</span>
+                            <span class="enedis-id-value" id="stat-fichiers">${this.periodes.length}</span>
                         </div>
-                        <div class="enedis-id-row" style="margin-top: 10px;">
+                        <div class="enedis-id-row">
                             <span class="enedis-id-label">Période:</span>
-                            <span style="font-size: 11px;" id="periode-display">${formatDate(CONFIG.dateDebut)} → ${formatDate(CONFIG.dateFin)}</span>
+                            <span style="font-size: 10px;" id="periode-display">${formatDate(CONFIG.dateDebut).slice(5)} → ${formatDate(CONFIG.dateFin).slice(5)}</span>
                         </div>
                     </div>
 
-                    <div class="enedis-section">
-                        <div class="enedis-section-title">💾 Mode de téléchargement</div>
-                        <div class="enedis-mode-toggle">
-                            <div class="enedis-mode-btn ${CONFIG.modeZip ? 'active' : ''}" id="btn-mode-zip">
-                                📦 ZIP unique
-                            </div>
-                            <div class="enedis-mode-btn ${!CONFIG.modeZip ? 'active' : ''}" id="btn-mode-classique">
-                                📁 Classique
-                            </div>
-                        </div>
-                        <div class="enedis-mode-info" id="mode-info">
-                            ${CONFIG.modeZip ?
-                                '✅ Un seul fichier ZIP à télécharger (recommandé)' :
-                                '⚠️ Vous devrez sauvegarder chaque fichier individuellement'}
-                        </div>
+                    <div class="enedis-mode-toggle">
+                        <div class="enedis-mode-btn ${CONFIG.modeZip ? 'active' : ''}" id="btn-mode-zip">📦 ZIP</div>
+                        <div class="enedis-mode-btn ${!CONFIG.modeZip ? 'active' : ''}" id="btn-mode-classique">📁 Un par un</div>
                     </div>
 
                     <div class="enedis-btn-group">
@@ -1219,10 +1088,9 @@
                         <button id="btn-pause" disabled>⏸ Pause</button>
                     </div>
 
-                    <div class="enedis-btn-group" style="margin-top: 10px;">
-                        <button id="btn-config">⚙ Dates</button>
-                        <button id="btn-reset">🔄 Reset</button>
-                        <button id="btn-debug">${CONFIG.debugMode ? '🐛 Debug ON' : '🐛 Debug'}</button>
+                    <div class="enedis-btn-group" style="margin-top: 6px;">
+                        <button id="btn-config">⚙️</button>
+                        <button id="btn-reset">🔄</button>
                     </div>
 
                     <div id="enedis-progress"></div>
@@ -1236,7 +1104,6 @@
             document.getElementById('btn-config').addEventListener('click', () => this.configManager.ouvrir());
             document.getElementById('btn-reset').addEventListener('click', () => this.resetIDs());
             document.getElementById('btn-minimize').addEventListener('click', () => this.toggleMinimize());
-            document.getElementById('btn-debug').addEventListener('click', () => this.toggleDebug());
             document.getElementById('btn-mode-zip').addEventListener('click', () => this.changerMode(true));
             document.getElementById('btn-mode-classique').addEventListener('click', () => this.changerMode(false));
 
@@ -1369,14 +1236,8 @@
             CONFIG.modeZip = modeZip;
             GM_setValue('modeZip', modeZip);
 
-            // Mettre à jour l'interface
             document.getElementById('btn-mode-zip').classList.toggle('active', modeZip);
             document.getElementById('btn-mode-classique').classList.toggle('active', !modeZip);
-
-            const infoText = modeZip ?
-                '✅ Un seul fichier ZIP à télécharger (recommandé)' :
-                '⚠️ Vous devrez sauvegarder chaque fichier individuellement';
-            document.getElementById('mode-info').textContent = infoText;
 
             console.log('💾 [ENEDIS] Mode:', modeZip ? 'ZIP unique' : 'Classique');
         }
@@ -1389,38 +1250,24 @@
 
         mettreAJourInterface() {
             const statusPersonne = document.getElementById('status-personne');
-            const statusPrm = document.getElementById('status-prm');
-
-            if (CONFIG.personneId) {
-                statusPersonne.textContent = CONFIG.personneId;
-                statusPersonne.className = 'enedis-id-value enedis-id-detected';
-            } else {
-                statusPersonne.textContent = 'En attente...';
-                statusPersonne.className = 'enedis-id-value enedis-id-missing';
-            }
-
-            if (CONFIG.prmId) {
-                statusPrm.textContent = CONFIG.prmId;
-                statusPrm.className = 'enedis-id-value enedis-id-detected';
-            } else {
-                statusPrm.textContent = 'En attente...';
-                statusPrm.className = 'enedis-id-value enedis-id-missing';
-            }
 
             if (CONFIG.personneId && CONFIG.prmId) {
-                const guide = document.querySelector('.enedis-guide');
-                if (guide) guide.style.display = 'none';
-
-                // Masquer le bouton de saisie manuelle s'il existe
-                const btnManual = document.getElementById('btn-manual-id');
-                if (btnManual) btnManual.style.display = 'none';
+                statusPersonne.textContent = '✅ OK';
+                statusPersonne.className = 'enedis-id-value enedis-id-detected';
+            } else {
+                statusPersonne.textContent = 'Non détecté';
+                statusPersonne.className = 'enedis-id-value enedis-id-missing';
             }
         }
 
         mettreAJourStats() {
-            document.getElementById('stat-fichiers').textContent = this.periodes.length;
-            document.getElementById('periode-display').textContent =
-                `${formatDate(CONFIG.dateDebut)} → ${formatDate(CONFIG.dateFin)}`;
+            const statFichiers = document.getElementById('stat-fichiers');
+            if (statFichiers) statFichiers.textContent = this.periodes.length;
+
+            const periodeDisplay = document.getElementById('periode-display');
+            if (periodeDisplay) {
+                periodeDisplay.textContent = `${formatDate(CONFIG.dateDebut).slice(5)} → ${formatDate(CONFIG.dateFin).slice(5)}`;
+            }
         }
 
         updateStatus(message) {
@@ -1585,15 +1432,30 @@
                 const dateFin = formatDate(CONFIG.dateFin).replace(/-/g, '');
                 const zipFileName = `Enedis_${dateDebut}_${dateFin}_${reussis}fichiers.zip`;
 
-                const downloadLink = document.createElement('a');
-                downloadLink.href = URL.createObjectURL(zipBlob);
-                downloadLink.download = zipFileName;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
+                console.log(`💾 [ZIP] Création du lien de téléchargement: ${zipFileName}`);
 
-                console.log(`✅ [ZIP] Téléchargement terminé: ${zipFileName}`);
-                this.updateStatus(`✅ ZIP téléchargé ! ${reussis} fichiers (${echoues} erreurs)`);
+                const blobUrl = URL.createObjectURL(zipBlob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = blobUrl;
+                downloadLink.download = zipFileName;
+                downloadLink.style.display = 'none';
+                document.body.appendChild(downloadLink);
+
+                // Forcer le téléchargement avec un timeout
+                setTimeout(() => {
+                    console.log(`📥 [ZIP] Déclenchement du téléchargement`);
+                    downloadLink.click();
+
+                    // Nettoyer après un délai
+                    setTimeout(() => {
+                        document.body.removeChild(downloadLink);
+                        URL.revokeObjectURL(blobUrl);
+                        console.log(`🧹 [ZIP] Nettoyage effectué`);
+                    }, 1000);
+                }, 100);
+
+                console.log(`✅ [ZIP] Téléchargement lancé: ${zipFileName}`);
+                this.updateStatus(`✅ ZIP prêt ! ${reussis} fichiers (${echoues} erreurs)`);
 
                 // Désactiver les boutons
                 document.getElementById('btn-start').disabled = true;
