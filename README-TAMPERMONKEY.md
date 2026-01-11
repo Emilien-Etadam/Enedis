@@ -2,6 +2,9 @@
 
 Script automatique pour télécharger facilement vos données de consommation Enedis sur plusieurs mois.
 
+> **🆕 Version 5.8** : Logs améliorés, meilleur gestion d'erreurs, timeout augmenté  
+> **🔧 Problème de téléchargement ZIP ?** → Consultez le **[Guide de Dépannage](./DEPANNAGE-ZIP.md)** complet
+
 ## ✨ Fonctionnalités
 
 - ✅ **Détection automatique** des identifiants (personneId, prmId)
