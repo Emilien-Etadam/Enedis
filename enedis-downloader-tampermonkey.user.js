@@ -1394,8 +1394,12 @@
                         });
                     });
 
+                    // Convertir le blob en ArrayBuffer pour compatibilité avec JSZip
+                    const arrayBuffer = await blob.arrayBuffer();
+                    console.log(`🔄 [ZIP] Converti en ArrayBuffer: ${arrayBuffer.byteLength} octets`);
+
                     // Ajouter au ZIP
-                    zip.file(fileName, blob);
+                    zip.file(fileName, arrayBuffer);
                     reussis++;
 
                     console.log(`✅ [ZIP] Ajouté: ${fileName}`);
@@ -1426,15 +1430,10 @@
 
             try {
                 // Pas de compression car les Excel sont déjà compressés
-                console.log('📦 [ZIP] Appel à generateAsync...');
+                console.log('📦 [ZIP] Appel à generateAsync (sans callback)...');
                 const zipBlob = await zip.generateAsync({
                     type: 'blob',
-                    compression: 'STORE',  // Aucune compression
-                    streamFiles: true      // Générer en streaming pour éviter de bloquer
-                }, (metadata) => {
-                    const progression = Math.round(metadata.percent);
-                    console.log(`📦 [ZIP] Progression: ${progression}% (${metadata.currentFile || 'N/A'})`);
-                    this.updateStatus(`📦 Création du ZIP... ${progression}%`);
+                    compression: 'STORE'  // Aucune compression
                 });
 
                 console.log('📦 [ZIP] generateAsync terminé, taille du blob:', zipBlob.size);
