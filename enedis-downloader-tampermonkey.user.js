@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.4
+// @name         Enedis - Téléchargement Auto Historique v5.5
 // @namespace    http://tampermonkey.net/
-// @version      5.4
-// @description  Détection IDs : Auto + Bouton forcé + Saisie manuelle
+// @version      5.5
+// @description  Détection IDs : Bouton forcé + Saisie manuelle (Network pas nécessaire)
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
 // @match        https://mon-compte-particulier.enedis.fr/*
@@ -1389,19 +1389,32 @@
     console.log('⚡ [ENEDIS] Script v5.4 démarré - Auto + Bouton manuel + Saisie');
     new NetworkIDDetector();
 
-    // ÉTAPE 2: Créer l'interface quand le DOM est prêt
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            window.downloadManager = new DownloadManager();
+    // ÉTAPE 2: Créer l'interface quand le DOM est prêt (UNE SEULE FOIS)
+    if (!window._enedisDownloaderInitialized) {
+        window._enedisDownloaderInitialized = true;
 
-            console.log('✅ [ENEDIS] Interface chargée');
-            console.log('📅 [ENEDIS] Période:', formatDate(CONFIG.dateDebut), '→', formatDate(CONFIG.dateFin));
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                // Vérifier qu'il n'y a pas déjà une interface
+                if (document.getElementById('enedis-downloader')) {
+                    console.log('⚠️ [ENEDIS] Interface déjà présente, skip');
+                    return;
+                }
 
-            if (CONFIG.personneId && CONFIG.prmId) {
-                console.log('✅ [ENEDIS] IDs déjà enregistrés:', CONFIG.personneId, CONFIG.prmId);
-            } else {
-                console.log('⚠️ [ENEDIS] IDs manquants - Lancez un téléchargement sur Enedis pour les détecter');
-            }
-        }, 1500);
-    });
+                window.downloadManager = new DownloadManager();
+
+                console.log('✅ [ENEDIS] Interface chargée');
+                console.log('📅 [ENEDIS] Période:', formatDate(CONFIG.dateDebut), '→', formatDate(CONFIG.dateFin));
+
+                if (CONFIG.personneId && CONFIG.prmId) {
+                    console.log('✅ [ENEDIS] IDs déjà enregistrés:', CONFIG.personneId, CONFIG.prmId);
+                } else {
+                    console.log('⚠️ [ENEDIS] IDs manquants - Workflow:');
+                    console.log('   1. Cliquez sur "Télécharger" sur Enedis');
+                    console.log('   2. Attendez 1-2 secondes');
+                    console.log('   3. Cliquez sur "🔍 Détecter IDs"');
+                }
+            }, 1500);
+        });
+    }
 })();
