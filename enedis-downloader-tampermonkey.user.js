@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5.6
+// @name         Enedis - Téléchargement Auto Historique v5.7
 // @namespace    http://tampermonkey.net/
-// @version      5.6
-// @description  Détection IDs : Bouton forcé + Saisie manuelle (Fix: une seule fenêtre)
+// @version      5.7
+// @description  Téléchargement ZIP unique + Détection IDs (plus besoin de sauvegarder un à un)
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
 // @match        https://mon-compte-particulier.enedis.fr/*
@@ -14,6 +14,7 @@
 // @grant        GM_addStyle
 // @grant        GM_notification
 // @grant        GM_setClipboard
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @run-at       document-start
 // ==/UserScript==
 
@@ -37,7 +38,8 @@
         delaiMs: GM_getValue('delaiMs', 2500),
         personneId: GM_getValue('personneId', null),
         prmId: GM_getValue('prmId', null),
-        debugMode: GM_getValue('debugMode', false)
+        debugMode: GM_getValue('debugMode', false),
+        modeZip: GM_getValue('modeZip', true) // true = ZIP unique, false = mode classique
     };
 
     // CSS
@@ -481,6 +483,65 @@
             padding: 8px 16px !important;
             font-size: 12px !important;
             margin-top: 8px;
+        }
+
+        .enedis-mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .enedis-mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .enedis-mode-btn.active {
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.8);
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .enedis-mode-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .enedis-progress-bar {
+            width: 100%;
+            height: 24px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 12px;
+            position: relative;
+        }
+
+        .enedis-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .enedis-mode-info {
+            background: rgba(16, 185, 129, 0.2);
+            border-left: 4px solid #10b981;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 12px;
+            line-height: 1.5;
         }
     `);
 
@@ -1135,6 +1196,23 @@
                         </div>
                     </div>
 
+                    <div class="enedis-section">
+                        <div class="enedis-section-title">💾 Mode de téléchargement</div>
+                        <div class="enedis-mode-toggle">
+                            <div class="enedis-mode-btn ${CONFIG.modeZip ? 'active' : ''}" id="btn-mode-zip">
+                                📦 ZIP unique
+                            </div>
+                            <div class="enedis-mode-btn ${!CONFIG.modeZip ? 'active' : ''}" id="btn-mode-classique">
+                                📁 Classique
+                            </div>
+                        </div>
+                        <div class="enedis-mode-info" id="mode-info">
+                            ${CONFIG.modeZip ?
+                                '✅ Un seul fichier ZIP à télécharger (recommandé)' :
+                                '⚠️ Vous devrez sauvegarder chaque fichier individuellement'}
+                        </div>
+                    </div>
+
                     <div class="enedis-btn-group">
                         <button id="btn-start">▶ Démarrer</button>
                         <button id="btn-pause" disabled>⏸ Pause</button>
@@ -1158,6 +1236,8 @@
             document.getElementById('btn-reset').addEventListener('click', () => this.resetIDs());
             document.getElementById('btn-minimize').addEventListener('click', () => this.toggleMinimize());
             document.getElementById('btn-debug').addEventListener('click', () => this.toggleDebug());
+            document.getElementById('btn-mode-zip').addEventListener('click', () => this.changerMode(true));
+            document.getElementById('btn-mode-classique').addEventListener('click', () => this.changerMode(false));
 
             if (!idsDetectes) {
                 document.getElementById('btn-manual-id').addEventListener('click', () => this.manualIDManager.ouvrir());
@@ -1284,6 +1364,22 @@
                 '🐛 Mode debug DÉSACTIVÉ');
         }
 
+        changerMode(modeZip) {
+            CONFIG.modeZip = modeZip;
+            GM_setValue('modeZip', modeZip);
+
+            // Mettre à jour l'interface
+            document.getElementById('btn-mode-zip').classList.toggle('active', modeZip);
+            document.getElementById('btn-mode-classique').classList.toggle('active', !modeZip);
+
+            const infoText = modeZip ?
+                '✅ Un seul fichier ZIP à télécharger (recommandé)' :
+                '⚠️ Vous devrez sauvegarder chaque fichier individuellement';
+            document.getElementById('mode-info').textContent = infoText;
+
+            console.log('💾 [ENEDIS] Mode:', modeZip ? 'ZIP unique' : 'Classique');
+        }
+
         toggleMinimize() {
             this.minimized = !this.minimized;
             document.getElementById('enedis-downloader').classList.toggle('minimized', this.minimized);
@@ -1340,7 +1436,12 @@
             document.getElementById('btn-start').disabled = true;
             document.getElementById('btn-pause').disabled = false;
 
-            await this.telechargerSuivant();
+            // Choisir le mode de téléchargement
+            if (CONFIG.modeZip) {
+                await this.telechargerEnZip();
+            } else {
+                await this.telechargerSuivant();
+            }
         }
 
         pause() {
@@ -1380,6 +1481,127 @@
             setTimeout(() => this.telechargerSuivant(), CONFIG.delaiMs);
         }
 
+        async telechargerEnZip() {
+            if (!this.actif) return;
+
+            console.log('📦 [ENEDIS] Démarrage du téléchargement ZIP');
+
+            // Créer la barre de progression
+            const progressHTML = `
+                <div class="enedis-progress-bar">
+                    <div class="enedis-progress-fill" id="zip-progress-fill" style="width: 0%">0%</div>
+                </div>
+            `;
+            this.updateStatus('🔄 Préparation du téléchargement ZIP...' + progressHTML);
+
+            const zip = new JSZip();
+            const total = this.periodes.length;
+            let reussis = 0;
+            let echoues = 0;
+
+            for (let i = 0; i < this.periodes.length; i++) {
+                if (!this.actif) {
+                    this.updateStatus('⏸ Téléchargement ZIP annulé');
+                    return;
+                }
+
+                const periode = this.periodes[i];
+                const url = genererURL(periode.debut, periode.fin);
+                const fileName = `Enedis_${formatDate(periode.debut)}_${formatDate(periode.fin)}.xlsx`;
+
+                try {
+                    // Mise à jour de la progression
+                    const pourcentage = Math.round((i / total) * 100);
+                    const progressFill = document.getElementById('zip-progress-fill');
+                    if (progressFill) {
+                        progressFill.style.width = pourcentage + '%';
+                        progressFill.textContent = `${i}/${total} (${pourcentage}%)`;
+                    }
+                    this.updateStatus(`📥 Téléchargement ${i + 1}/${total} : ${formatDate(periode.debut)} → ${formatDate(periode.fin)}` + progressHTML);
+
+                    console.log(`📥 [ZIP] Téléchargement ${i + 1}/${total}: ${fileName}`);
+
+                    // Télécharger le fichier
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const blob = await response.blob();
+
+                    // Ajouter au ZIP
+                    zip.file(fileName, blob);
+                    reussis++;
+
+                    console.log(`✅ [ZIP] Ajouté: ${fileName}`);
+
+                    // Petit délai pour éviter de surcharger le serveur
+                    if (i < this.periodes.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                } catch (error) {
+                    console.error(`❌ [ZIP] Erreur ${fileName}:`, error);
+                    echoues++;
+
+                    // Créer un fichier texte d'erreur dans le ZIP
+                    const errorMsg = `Erreur lors du téléchargement de cette période:\n${error.message}\n\nURL: ${url}`;
+                    zip.file(fileName.replace('.xlsx', '_ERREUR.txt'), errorMsg);
+                }
+            }
+
+            if (!this.actif) {
+                this.updateStatus('⏸ Téléchargement ZIP annulé');
+                return;
+            }
+
+            // Générer le ZIP
+            this.updateStatus('📦 Génération du fichier ZIP...');
+            console.log(`📦 [ZIP] Génération du fichier (${reussis} réussis, ${echoues} échoués)`);
+
+            try {
+                const zipBlob = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 }
+                }, (metadata) => {
+                    const progression = Math.round(metadata.percent);
+                    this.updateStatus(`📦 Compression du ZIP... ${progression}%`);
+                });
+
+                // Télécharger le ZIP
+                const dateDebut = formatDate(CONFIG.dateDebut).replace(/-/g, '');
+                const dateFin = formatDate(CONFIG.dateFin).replace(/-/g, '');
+                const zipFileName = `Enedis_${dateDebut}_${dateFin}_${reussis}fichiers.zip`;
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(zipBlob);
+                downloadLink.download = zipFileName;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+
+                console.log(`✅ [ZIP] Téléchargement terminé: ${zipFileName}`);
+                this.updateStatus(`✅ ZIP téléchargé ! ${reussis} fichiers (${echoues} erreurs)`);
+
+                // Désactiver les boutons
+                document.getElementById('btn-start').disabled = true;
+                document.getElementById('btn-pause').disabled = true;
+
+                // Notification
+                if (typeof GM_notification !== 'undefined') {
+                    GM_notification({
+                        title: '✅ Téléchargement ZIP terminé',
+                        text: `${reussis} fichiers téléchargés dans ${zipFileName}`,
+                        timeout: 5000
+                    });
+                }
+            } catch (error) {
+                console.error('❌ [ZIP] Erreur génération:', error);
+                this.updateStatus(`❌ Erreur lors de la génération du ZIP: ${error.message}`);
+            }
+        }
+
         resetIDs() {
             if (confirm('🔄 Réinitialiser les IDs ?')) {
                 CONFIG.personneId = null;
@@ -1394,7 +1616,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.6 démarré - Une seule fenêtre');
+    console.log('⚡ [ENEDIS] Script v5.7 démarré - Téléchargement ZIP unique');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt (UNE SEULE FOIS)
