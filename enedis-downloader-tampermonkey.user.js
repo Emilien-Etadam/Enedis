@@ -1394,12 +1394,13 @@
                         });
                     });
 
-                    // Convertir le blob en ArrayBuffer pour compatibilité avec JSZip
+                    // Convertir le blob en Uint8Array pour compatibilité avec JSZip
                     const arrayBuffer = await blob.arrayBuffer();
-                    console.log(`🔄 [ZIP] Converti en ArrayBuffer: ${arrayBuffer.byteLength} octets`);
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    console.log(`🔄 [ZIP] Converti en Uint8Array: ${uint8Array.byteLength} octets`);
 
                     // Ajouter au ZIP
-                    zip.file(fileName, arrayBuffer);
+                    zip.file(fileName, uint8Array, { binary: true });
                     reussis++;
 
                     console.log(`✅ [ZIP] Ajouté: ${fileName}`);
@@ -1430,11 +1431,19 @@
 
             try {
                 // Pas de compression car les Excel sont déjà compressés
-                console.log('📦 [ZIP] Appel à generateAsync (sans callback)...');
-                const zipBlob = await zip.generateAsync({
+                console.log('📦 [ZIP] Appel à generateAsync...');
+
+                // Utiliser un timeout pour éviter le blocage infini
+                const zipBlobPromise = zip.generateAsync({
                     type: 'blob',
                     compression: 'STORE'  // Aucune compression
                 });
+
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout de 60 secondes dépassé')), 60000)
+                );
+
+                const zipBlob = await Promise.race([zipBlobPromise, timeoutPromise]);
 
                 console.log('📦 [ZIP] generateAsync terminé, taille du blob:', zipBlob.size);
 
