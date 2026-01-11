@@ -1421,18 +1421,23 @@
 
             // Générer le ZIP
             this.updateStatus('📦 Génération du fichier ZIP...');
-            console.log(`📦 [ZIP] Génération du fichier (${reussis} réussis, ${echoues} échoués)`);
+            console.log(`📦 [ZIP] Début génération (${reussis} réussis, ${echoues} échoués)`);
+            console.log(`📦 [ZIP] Nombre de fichiers dans le ZIP: ${Object.keys(zip.files).length}`);
 
             try {
                 // Pas de compression car les Excel sont déjà compressés
+                console.log('📦 [ZIP] Appel à generateAsync...');
                 const zipBlob = await zip.generateAsync({
                     type: 'blob',
-                    compression: 'STORE'  // Aucune compression pour être plus rapide
+                    compression: 'STORE',  // Aucune compression
+                    streamFiles: true      // Générer en streaming pour éviter de bloquer
                 }, (metadata) => {
                     const progression = Math.round(metadata.percent);
-                    console.log(`📦 [ZIP] Génération: ${progression}%`);
+                    console.log(`📦 [ZIP] Progression: ${progression}% (${metadata.currentFile || 'N/A'})`);
                     this.updateStatus(`📦 Création du ZIP... ${progression}%`);
                 });
+
+                console.log('📦 [ZIP] generateAsync terminé, taille du blob:', zipBlob.size);
 
                 // Télécharger le ZIP
                 const dateDebut = formatDate(CONFIG.dateDebut).replace(/-/g, '');
