@@ -2,6 +2,37 @@
   🔧 SOLUTION AU PROBLÈME DE TÉLÉCHARGEMENT ZIP - Script Tampermonkey Enedis
 ═══════════════════════════════════════════════════════════════════════════════
 
+⚠️ PROBLÈME IDENTIFIÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Le script se bloquait à l'étape :
+   📦 [ZIP] Appel à generateAsync...
+
+Sans jamais afficher les messages de progression ni télécharger le ZIP.
+
+🔍 CAUSE DU PROBLÈME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+generateAsync() sans callback de progression peut bloquer indéfiniment
+dans certains navigateurs, car le navigateur considère le script comme "gelé".
+
+✅ SOLUTION APPORTÉE - VERSION 5.9
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Ajout d'un callback de progression à zip.generateAsync()
+   → Force JSZip à donner des updates réguliers
+   → Empêche le navigateur de bloquer le script
+   
+2. Désactivation de streamFiles
+   → Meilleure compatibilité entre navigateurs
+   
+3. Logs de progression détaillés
+   → Affiche le pourcentage de génération (0% → 100%)
+   → Affiche le fichier en cours de traitement
+   
+4. Temps écoulé affiché
+   → Montre combien de temps a pris la génération
+
 ✅ MODIFICATIONS APPORTÉES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -68,8 +99,8 @@ Option C - Remplacement complet :
    5. Cliquer sur "▶ Démarrer"
    6. Observer les logs dans la console :
 
-      Logs attendus :
-      ───────────────
+      Logs attendus (NOUVEAUX avec v5.9) :
+      ───────────────────────────────────
       📦 [ENEDIS] Démarrage du téléchargement ZIP
       📦 [ENEDIS] JSZip disponible: true
       📦 [ENEDIS] 50 fichiers à télécharger
@@ -78,10 +109,15 @@ Option C - Remplacement complet :
       ✅ [ZIP] Ajouté au ZIP: Enedis_2024-05-01_2024-05-07.xlsx
       ... (répété pour chaque fichier)
       📦 [ZIP] Appel à generateAsync...
-      📦 [ZIP] Génération: 50.00% (...)
-      📦 [ZIP] Génération: 100.00% (finalisation)
-      📦 [ZIP] generateAsync terminé en 5.23s
-      📦 [ZIP] Taille du blob: 2.45 Mo
+      📦 [ZIP] Début génération avec suivi de progression...  <-- NOUVEAU
+      📦 [ZIP] Génération: 10.5% - Enedis_2024-05-01_2024-05-07.xlsx  <-- NOUVEAU
+      📦 [ZIP] Génération: 25.0% - Enedis_2024-05-15_2024-05-21.xlsx  <-- NOUVEAU
+      📦 [ZIP] Génération: 50.0% - Enedis_2024-06-01_2024-06-07.xlsx  <-- NOUVEAU
+      📦 [ZIP] Génération: 75.0% - Enedis_2024-07-01_2024-07-07.xlsx  <-- NOUVEAU
+      📦 [ZIP] Génération: 100.0% - finalisation  <-- NOUVEAU
+      📦 [ZIP] generateAsync terminé en 5.23s  <-- NOUVEAU
+      📦 [ZIP] generateAsync terminé, taille du blob: 2.45 Mo
+      💾 [ZIP] Blob URL créé: blob:https://...
       📥 [ZIP] Déclenchement du téléchargement de Enedis_20240501_20250430_50fichiers.zip
       ✅ [ZIP] Téléchargement lancé: Enedis_20240501_20250430_50fichiers.zip
 
