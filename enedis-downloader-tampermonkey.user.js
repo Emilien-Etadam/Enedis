@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Enedis - Téléchargement Auto Historique
 // @namespace    http://tampermonkey.net/
-// @version      5.11
-// @description  Téléchargement ZIP unique + Détection IDs (plus besoin de sauvegarder un à un)
+// @version      6.0
+// @description  Téléchargement fichier unique sur toute la plage - Interface épurée
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
 // @match        https://mon-compte-particulier.enedis.fr/*
@@ -15,7 +15,6 @@
 // @grant        GM_notification
 // @grant        GM_setClipboard
 // @grant        GM_xmlhttpRequest
-// @require      https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
 // @run-at       document-start
 // ==/UserScript==
 
@@ -34,13 +33,9 @@
     let CONFIG = {
         dateDebut: new Date(GM_getValue('dateDebut', '2024-05-01')),
         dateFin: new Date(GM_getValue('dateFin', '2025-04-30')),
-        intervalleJours: GM_getValue('intervalleJours', 7),
-        chevauchement: GM_getValue('chevauchement', 1),
-        delaiMs: GM_getValue('delaiMs', 2500),
         personneId: GM_getValue('personneId', null),
         prmId: GM_getValue('prmId', null),
-        debugMode: GM_getValue('debugMode', false),
-        modeZip: GM_getValue('modeZip', true) // true = ZIP unique, false = mode classique
+        debugMode: GM_getValue('debugMode', false)
     };
 
     // CSS
@@ -826,37 +821,13 @@
                                    required>
                         </div>
 
-                        <div class="enedis-form-row">
-                            <div class="enedis-form-group">
-                                <label class="enedis-form-label">📊 Intervalle (jours)</label>
-                                <input type="number"
-                                       class="enedis-form-input"
-                                       id="config-intervalle"
-                                       value="${CONFIG.intervalleJours}"
-                                       min="1"
-                                       max="365">
+                        <div class="enedis-form-info" style="background: #e0f2f1; border-color: #00897b;">
+                            <div class="enedis-form-info-title" style="color: #00695c;">
+                                📄 Mode fichier unique
                             </div>
-
-                            <div class="enedis-form-group">
-                                <label class="enedis-form-label">🔄 Chevauchement</label>
-                                <input type="number"
-                                       class="enedis-form-input"
-                                       id="config-chevauchement"
-                                       value="${CONFIG.chevauchement}"
-                                       min="0"
-                                       max="7">
+                            <div class="enedis-form-info-text" style="color: #00695c;">
+                                Un seul fichier Excel sera téléchargé avec toute la période sélectionnée.
                             </div>
-                        </div>
-
-                        <div class="enedis-form-group">
-                            <label class="enedis-form-label">⏱ Délai (ms)</label>
-                            <input type="number"
-                                   class="enedis-form-input"
-                                   id="config-delai"
-                                   value="${CONFIG.delaiMs}"
-                                   min="1000"
-                                   max="10000"
-                                   step="500">
                         </div>
 
                         <div class="enedis-form-info" style="background: #f0fdf4; border-color: #22c55e;">
@@ -890,7 +861,7 @@
                 if (e.target === modal) this.fermer();
             });
 
-            ['config-date-debut', 'config-date-fin', 'config-intervalle', 'config-chevauchement'].forEach(id => {
+            ['config-date-debut', 'config-date-fin', 'config-intervalle'].forEach(id => {
                 document.getElementById(id).addEventListener('input', () => this.mettreAJourApercu());
             });
 
@@ -901,8 +872,6 @@
             try {
                 const debut = new Date(document.getElementById('config-date-debut').value);
                 const fin = new Date(document.getElementById('config-date-fin').value);
-                const intervalle = parseInt(document.getElementById('config-intervalle').value);
-                const chevauchement = parseInt(document.getElementById('config-chevauchement').value);
 
                 if (debut >= fin) {
                     document.getElementById('config-preview').innerHTML =
@@ -910,20 +879,13 @@
                     return;
                 }
 
-                let count = 0;
-                let dateActuelle = new Date(debut);
-                while (dateActuelle < fin && count < 1000) {
-                    count++;
-                    dateActuelle.setDate(dateActuelle.getDate() + intervalle - chevauchement);
-                }
-
                 const dureeJours = Math.ceil((fin - debut) / (1000 * 60 * 60 * 24));
-                const dureeMinutes = Math.ceil((count * parseInt(document.getElementById('config-delai').value)) / 60000);
+                const dureeMois = (dureeJours / 30).toFixed(1);
 
                 document.getElementById('config-preview').innerHTML = `
-                    <strong>${count} fichiers</strong> seront téléchargés<br>
-                    Période : <strong>${dureeJours} jours</strong><br>
-                    Durée estimée : <strong>~${dureeMinutes} min</strong>
+                    <strong>1 fichier</strong> sera téléchargé<br>
+                    Période : <strong>${dureeJours} jours</strong> (~${dureeMois} mois)<br>
+                    Durée : <strong>Instantané</strong> ⚡
                 `;
             } catch (e) {
                 document.getElementById('config-preview').innerHTML = '⚠️ Vérifiez vos paramètres';
@@ -949,9 +911,6 @@
             try {
                 const debut = new Date(document.getElementById('config-date-debut').value);
                 const fin = new Date(document.getElementById('config-date-fin').value);
-                const intervalle = parseInt(document.getElementById('config-intervalle').value);
-                const chevauchement = parseInt(document.getElementById('config-chevauchement').value);
-                const delai = parseInt(document.getElementById('config-delai').value);
 
                 if (debut >= fin) {
                     alert('❌ Date de début doit être < date de fin');
@@ -960,20 +919,12 @@
 
                 CONFIG.dateDebut = debut;
                 CONFIG.dateFin = fin;
-                CONFIG.intervalleJours = intervalle;
-                CONFIG.chevauchement = chevauchement;
-                CONFIG.delaiMs = delai;
 
                 GM_setValue('dateDebut', formatDateInput(debut));
                 GM_setValue('dateFin', formatDateInput(fin));
-                GM_setValue('intervalleJours', intervalle);
-                GM_setValue('chevauchement', chevauchement);
-                GM_setValue('delaiMs', delai);
 
-                this.downloadManager.periodes = genererPeriodes();
-                this.downloadManager.index = 0;
                 this.downloadManager.mettreAJourStats();
-                this.downloadManager.updateStatus('✅ Configuration mise à jour !');
+                this.downloadManager.updateStatus('✅ Dates mises à jour !');
 
                 this.fermer();
             } catch (e) {
@@ -994,28 +945,7 @@
         return formatDate(date);
     }
 
-    function genererPeriodes() {
-        const periodes = [];
-        let dateActuelle = new Date(CONFIG.dateDebut);
 
-        while (dateActuelle < CONFIG.dateFin) {
-            const finPeriode = new Date(dateActuelle);
-            finPeriode.setDate(finPeriode.getDate() + CONFIG.intervalleJours - 1);
-
-            if (finPeriode > CONFIG.dateFin) {
-                finPeriode.setTime(CONFIG.dateFin.getTime());
-            }
-
-            periodes.push({
-                debut: new Date(dateActuelle),
-                fin: new Date(finPeriode)
-            });
-
-            dateActuelle.setDate(dateActuelle.getDate() + CONFIG.intervalleJours - CONFIG.chevauchement);
-        }
-
-        return periodes;
-    }
 
     function genererURL(debut, fin) {
         const base = 'https://alex.microapplications.enedis.fr/mes-mesures-prm/api/private/v2';
@@ -1025,8 +955,6 @@
     // Gestionnaire principal
     class DownloadManager {
         constructor() {
-            this.periodes = genererPeriodes();
-            this.index = 0;
             this.actif = false;
             this.minimized = false;
             this.creerInterface();
@@ -1052,12 +980,17 @@
 
             panel.innerHTML = `
                 <button class="enedis-minimize" id="btn-minimize">−</button>
-                <h3>⚡ Enedis</h3>
+                <h3>⚡ Enedis Downloader</h3>
                 <div class="enedis-content">
                     <div class="enedis-section">
+                        <div class="enedis-section-title">Identifiants</div>
                         <div class="enedis-id-row">
-                            <span class="enedis-id-label">ID:</span>
+                            <span class="enedis-id-label">Personne ID:</span>
                             <span class="enedis-id-value" id="status-personne">...</span>
+                        </div>
+                        <div class="enedis-id-row">
+                            <span class="enedis-id-label">PRM ID:</span>
+                            <span class="enedis-id-value" id="status-prm">...</span>
                         </div>
                         ${!idsDetectes ? `
                         <div class="enedis-btn-group" style="margin-top: 8px;">
@@ -1068,30 +1001,25 @@
                     </div>
 
                     <div class="enedis-section">
+                        <div class="enedis-section-title">Période à télécharger</div>
                         <div class="enedis-id-row">
-                            <span class="enedis-id-label">Fichiers:</span>
-                            <span class="enedis-id-value" id="stat-fichiers">${this.periodes.length}</span>
+                            <span class="enedis-id-label">Du:</span>
+                            <span id="periode-start">${formatDate(CONFIG.dateDebut).slice(5)}</span>
                         </div>
                         <div class="enedis-id-row">
-                            <span class="enedis-id-label">Période:</span>
-                            <span style="font-size: 10px;" id="periode-display">${formatDate(CONFIG.dateDebut).slice(5)} → ${formatDate(CONFIG.dateFin).slice(5)}</span>
+                            <span class="enedis-id-label">Au:</span>
+                            <span id="periode-end">${formatDate(CONFIG.dateFin).slice(5)}</span>
                         </div>
-                    </div>
-
-                    <div class="enedis-mode-toggle">
-                        <div class="enedis-mode-btn ${CONFIG.modeZip === 'single' ? 'active' : ''}" id="btn-mode-single">📄 Unique</div>
-                        <div class="enedis-mode-btn ${CONFIG.modeZip === true ? 'active' : ''}" id="btn-mode-zip">📦 ZIP</div>
-                        <div class="enedis-mode-btn ${CONFIG.modeZip === false ? 'active' : ''}" id="btn-mode-classique">📁 Multiple</div>
+                        <button id="btn-config" style="width: 100%; margin-top: 8px;">⚙️ Modifier les dates</button>
                     </div>
 
                     <div class="enedis-btn-group">
-                        <button id="btn-start">▶ Démarrer</button>
-                        <button id="btn-pause" disabled>⏸ Pause</button>
+                        <button id="btn-start" style="flex: 1;">📄 Télécharger</button>
                     </div>
 
                     <div class="enedis-btn-group" style="margin-top: 6px;">
-                        <button id="btn-config">⚙️</button>
-                        <button id="btn-reset">🔄</button>
+                        <button id="btn-reset">🔄 Reset IDs</button>
+                        <button id="btn-debug">${CONFIG.debugMode ? '🐛 Debug ON' : '🐛 Debug'}</button>
                     </div>
 
                     <div id="enedis-progress"></div>
@@ -1101,14 +1029,11 @@
             document.body.appendChild(panel);
 
             document.getElementById('btn-start').addEventListener('click', () => this.demarrer());
-            document.getElementById('btn-pause').addEventListener('click', () => this.pause());
-            document.getElementById('btn-config').addEventListener('click', () => this.configManager.ouvrir());
+                        document.getElementById('btn-config').addEventListener('click', () => this.configManager.ouvrir());
             document.getElementById('btn-reset').addEventListener('click', () => this.resetIDs());
+            document.getElementById('btn-debug').addEventListener('click', () => this.toggleDebug());
             document.getElementById('btn-minimize').addEventListener('click', () => this.toggleMinimize());
-            document.getElementById('btn-mode-single').addEventListener('click', () => this.changerMode('single'));
-            document.getElementById('btn-mode-zip').addEventListener('click', () => this.changerMode(true));
-            document.getElementById('btn-mode-classique').addEventListener('click', () => this.changerMode(false));
-
+                                    
             if (!idsDetectes) {
                 document.getElementById('btn-manual-id').addEventListener('click', () => this.manualIDManager.ouvrir());
                 document.getElementById('btn-detect-ids').addEventListener('click', () => this.forcerDetection());
@@ -1234,17 +1159,7 @@
                 '🐛 Mode debug DÉSACTIVÉ');
         }
 
-        changerMode(modeZip) {
-            CONFIG.modeZip = modeZip;
-            GM_setValue('modeZip', modeZip);
 
-            document.getElementById('btn-mode-single').classList.toggle('active', modeZip === 'single');
-            document.getElementById('btn-mode-zip').classList.toggle('active', modeZip === true);
-            document.getElementById('btn-mode-classique').classList.toggle('active', modeZip === false);
-
-            const modeText = modeZip === 'single' ? 'Fichier unique' : (modeZip ? 'ZIP unique' : 'Multiple');
-            console.log('💾 [ENEDIS] Mode:', modeText);
-        }
 
         toggleMinimize() {
             this.minimized = !this.minimized;
@@ -1254,30 +1169,45 @@
 
         mettreAJourInterface() {
             const statusPersonne = document.getElementById('status-personne');
+            const statusPrm = document.getElementById('status-prm');
 
             if (CONFIG.personneId && CONFIG.prmId) {
-                // Afficher l'ID (tronqué si trop long)
-                const idText = CONFIG.personneId.length > 12 ?
-                    CONFIG.personneId.substring(0, 12) + '...' :
+                // Afficher Personne ID (tronqué si trop long)
+                const personneText = CONFIG.personneId.length > 10 ?
+                    CONFIG.personneId.substring(0, 10) + '...' :
                     CONFIG.personneId;
-                statusPersonne.textContent = idText;
+                statusPersonne.textContent = personneText;
                 statusPersonne.className = 'enedis-id-value enedis-id-detected';
-                statusPersonne.title = `Personne: ${CONFIG.personneId}\nPRM: ${CONFIG.prmId}`;
+                statusPersonne.title = CONFIG.personneId;
+                
+                // Afficher PRM ID (tronqué si trop long)
+                const prmText = CONFIG.prmId.length > 14 ?
+                    CONFIG.prmId.substring(0, 14) :
+                    CONFIG.prmId;
+                if (statusPrm) {
+                    statusPrm.textContent = prmText;
+                    statusPrm.className = 'enedis-id-value enedis-id-detected';
+                    statusPrm.title = CONFIG.prmId;
+                }
             } else {
                 statusPersonne.textContent = 'Non détecté';
                 statusPersonne.className = 'enedis-id-value enedis-id-missing';
                 statusPersonne.title = '';
+                
+                if (statusPrm) {
+                    statusPrm.textContent = 'Non détecté';
+                    statusPrm.className = 'enedis-id-value enedis-id-missing';
+                    statusPrm.title = '';
+                }
             }
         }
 
         mettreAJourStats() {
-            const statFichiers = document.getElementById('stat-fichiers');
-            if (statFichiers) statFichiers.textContent = this.periodes.length;
+            const periodeStart = document.getElementById('periode-start');
+            if (periodeStart) periodeStart.textContent = formatDate(CONFIG.dateDebut).slice(5);
 
-            const periodeDisplay = document.getElementById('periode-display');
-            if (periodeDisplay) {
-                periodeDisplay.textContent = `${formatDate(CONFIG.dateDebut).slice(5)} → ${formatDate(CONFIG.dateFin).slice(5)}`;
-            }
+            const periodeEnd = document.getElementById('periode-end');
+            if (periodeEnd) periodeEnd.textContent = formatDate(CONFIG.dateFin).slice(5);
         }
 
         updateStatus(message) {
@@ -1292,68 +1222,31 @@
 
             this.actif = true;
             document.getElementById('btn-start').disabled = true;
-            document.getElementById('btn-pause').disabled = false;
 
-            // Choisir le mode de téléchargement
-            if (CONFIG.modeZip === 'single') {
-                await this.telechargerFichierUnique();
-            } else if (CONFIG.modeZip === true) {
-                await this.telechargerEnZip();
-            } else {
-                await this.telechargerSuivant();
-            }
+            // Mode unique uniquement
+            await this.telechargerFichierUnique();
         }
 
-        pause() {
-            this.actif = false;
-            document.getElementById('btn-start').disabled = false;
-            document.getElementById('btn-pause').disabled = true;
-            this.updateStatus('⏸ En pause');
-        }
 
-        async telechargerSuivant() {
-            if (!this.actif || this.index >= this.periodes.length) {
-                if (this.index >= this.periodes.length) {
-                    this.updateStatus('✅ Terminé ! Tous les fichiers ont été téléchargés.');
-                    document.getElementById('btn-start').disabled = true;
-                    document.getElementById('btn-pause').disabled = true;
-                }
-                return;
-            }
 
-            const periode = this.periodes[this.index];
-            const url = genererURL(periode.debut, periode.fin);
 
-            const progression = `${this.index + 1}/${this.periodes.length}`;
-            const pourcentage = Math.round((this.index / this.periodes.length) * 100);
-            this.updateStatus(`📥 ${progression} (${pourcentage}%) : ${formatDate(periode.debut)} → ${formatDate(periode.fin)}`);
-
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = url;
-            document.body.appendChild(iframe);
-
-            setTimeout(() => {
-                document.body.removeChild(iframe);
-            }, 1000);
-
-            this.index++;
-            setTimeout(() => this.telechargerSuivant(), CONFIG.delaiMs);
-        }
 
         async telechargerFichierUnique() {
             if (!this.actif) return;
 
+            const dateDebut = formatDate(CONFIG.dateDebut);
+            const dateFin = formatDate(CONFIG.dateFin);
+            
             console.log('📄 [ENEDIS] Téléchargement fichier unique');
-            console.log(`📅 [ENEDIS] Période: ${formatDate(CONFIG.dateDebut)} → ${formatDate(CONFIG.dateFin)}`);
+            console.log(`📅 [ENEDIS] Période: ${dateDebut} → ${dateFin}`);
 
             const url = genererURL(CONFIG.dateDebut, CONFIG.dateFin);
-            const fileName = `Enedis_${formatDate(CONFIG.dateDebut)}_${formatDate(CONFIG.dateFin)}.xlsx`;
+            const fileName = `Enedis_${dateDebut}_${dateFin}.xlsx`;
 
-            this.updateStatus(`📥 Téléchargement en cours: ${formatDate(CONFIG.dateDebut)} → ${formatDate(CONFIG.dateFin)}`);
+            this.updateStatus(`📥 Téléchargement: ${dateDebut} → ${dateFin}`);
 
-            console.log('📥 [SINGLE] URL:', url);
-            console.log('📥 [SINGLE] Nom du fichier:', fileName);
+            console.log('📥 [ENEDIS] URL:', url);
+            console.log('📥 [ENEDIS] Fichier:', fileName);
 
             try {
                 // Créer un iframe caché pour déclencher le téléchargement
@@ -1364,199 +1257,37 @@
 
                 // Nettoyer après un délai
                 setTimeout(() => {
-                    document.body.removeChild(iframe);
-                    console.log('✅ [SINGLE] Téléchargement lancé');
-                }, 2000);
-
-                this.updateStatus(`✅ Téléchargement lancé ! Fichier: ${fileName}`);
-
-                // Désactiver les boutons
-                document.getElementById('btn-start').disabled = true;
-                document.getElementById('btn-pause').disabled = true;
-
-                // Notification
-                if (typeof GM_notification !== 'undefined') {
-                    GM_notification({
-                        title: '✅ Téléchargement lancé',
-                        text: `Fichier unique: ${fileName}`,
-                        timeout: 5000
-                    });
-                }
-            } catch (error) {
-                console.error('❌ [SINGLE] Erreur:', error);
-                this.updateStatus(`❌ Erreur: ${error.message}`);
-            }
-        }
-
-        async telechargerEnZip() {
-            if (!this.actif) return;
-
-            console.log('📦 [ENEDIS] Démarrage du téléchargement ZIP');
-
-            // Créer la barre de progression
-            const progressHTML = `
-                <div class="enedis-progress-bar">
-                    <div class="enedis-progress-fill" id="zip-progress-fill" style="width: 0%">0%</div>
-                </div>
-            `;
-            this.updateStatus('🔄 Préparation du téléchargement ZIP...' + progressHTML);
-
-            const zip = new JSZip();
-            const total = this.periodes.length;
-            let reussis = 0;
-            let echoues = 0;
-
-            for (let i = 0; i < this.periodes.length; i++) {
-                if (!this.actif) {
-                    this.updateStatus('⏸ Téléchargement ZIP annulé');
-                    return;
-                }
-
-                const periode = this.periodes[i];
-                const url = genererURL(periode.debut, periode.fin);
-                const fileName = `Enedis_${formatDate(periode.debut)}_${formatDate(periode.fin)}.xlsx`;
-
-                try {
-                    // Mise à jour de la progression
-                    const pourcentage = Math.round((i / total) * 100);
-                    const progressFill = document.getElementById('zip-progress-fill');
-                    if (progressFill) {
-                        progressFill.style.width = pourcentage + '%';
-                        progressFill.textContent = `${i}/${total} (${pourcentage}%)`;
+                    try {
+                        document.body.removeChild(iframe);
+                        console.log('✅ [ENEDIS] Téléchargement lancé avec succès');
+                    } catch (e) {
+                        // Ignorer si déjà supprimé
                     }
-                    this.updateStatus(`📥 Téléchargement ${i + 1}/${total} : ${formatDate(periode.debut)} → ${formatDate(periode.fin)}` + progressHTML);
+                }, 3000);
 
-                    console.log(`📥 [ZIP] Téléchargement ${i + 1}/${total}: ${fileName}`);
+                this.updateStatus(`✅ Téléchargement lancé !<br><small>${fileName}</small>`);
 
-                    // Télécharger le fichier avec GM_xmlhttpRequest (contourne CORS)
-                    const blob = await new Promise((resolve, reject) => {
-                        GM_xmlhttpRequest({
-                            method: 'GET',
-                            url: url,
-                            responseType: 'blob',
-                            onload: (response) => {
-                                if (response.status === 200) {
-                                    resolve(response.response);
-                                } else {
-                                    reject(new Error(`HTTP ${response.status}`));
-                                }
-                            },
-                            onerror: (error) => {
-                                reject(new Error('Erreur réseau'));
-                            }
-                        });
-                    });
-
-                    // Convertir le blob en Uint8Array pour compatibilité avec JSZip
-                    const arrayBuffer = await blob.arrayBuffer();
-                    const uint8Array = new Uint8Array(arrayBuffer);
-                    console.log(`🔄 [ZIP] Converti en Uint8Array: ${uint8Array.byteLength} octets`);
-
-                    // Ajouter au ZIP
-                    zip.file(fileName, uint8Array, { binary: true });
-                    reussis++;
-
-                    console.log(`✅ [ZIP] Ajouté: ${fileName}`);
-
-                    // Petit délai pour éviter de surcharger le serveur
-                    if (i < this.periodes.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
-                } catch (error) {
-                    console.error(`❌ [ZIP] Erreur ${fileName}:`, error);
-                    echoues++;
-
-                    // Créer un fichier texte d'erreur dans le ZIP
-                    const errorMsg = `Erreur lors du téléchargement de cette période:\n${error.message}\n\nURL: ${url}`;
-                    zip.file(fileName.replace('.xlsx', '_ERREUR.txt'), errorMsg);
-                }
-            }
-
-            if (!this.actif) {
-                this.updateStatus('⏸ Téléchargement ZIP annulé');
-                return;
-            }
-
-            // Générer le ZIP
-            this.updateStatus('📦 Génération du fichier ZIP...');
-            console.log(`📦 [ZIP] Début génération (${reussis} réussis, ${echoues} échoués)`);
-            console.log(`📦 [ZIP] Nombre de fichiers dans le ZIP: ${Object.keys(zip.files).length}`);
-
-            try {
-                // Pas de compression car les Excel sont déjà compressés
-                console.log('📦 [ZIP] Appel à generateAsync...');
-
-                // Utiliser un timeout pour éviter le blocage infini
-                console.log('📦 [ZIP] Début génération avec suivi de progression...');
-                const startTime = Date.now();
-                const zipBlobPromise = zip.generateAsync({
-                    type: 'blob',
-                    compression: 'STORE',  // Aucune compression
-                    streamFiles: false     // Désactiver streaming
-                }, function updateCallback(metadata) {
-                    // Callback de progression
-                    const percent = metadata.percent.toFixed(1);
-                    const currentFile = metadata.currentFile || 'finalisation';
-                    console.log(`📦 [ZIP] Génération: ${percent}% - ${currentFile}`);
-                });
-
-                const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout de 120 secondes dépassé')), 120000)
-                );
-
-                const zipBlob = await Promise.race([zipBlobPromise, timeoutPromise]);
-                
-                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-                console.log(`📦 [ZIP] generateAsync terminé en ${elapsed}s`);
-                console.log('📦 [ZIP] generateAsync terminé, taille du blob:', zipBlob.size);
-
-                // Télécharger le ZIP
-                const dateDebut = formatDate(CONFIG.dateDebut).replace(/-/g, '');
-                const dateFin = formatDate(CONFIG.dateFin).replace(/-/g, '');
-                const zipFileName = `Enedis_${dateDebut}_${dateFin}_${reussis}fichiers.zip`;
-
-                console.log(`💾 [ZIP] Création du lien de téléchargement: ${zipFileName}`);
-
-                const blobUrl = URL.createObjectURL(zipBlob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = blobUrl;
-                downloadLink.download = zipFileName;
-                downloadLink.style.display = 'none';
-                document.body.appendChild(downloadLink);
-
-                // Forcer le téléchargement avec un timeout
+                // Réactiver le bouton après 3 secondes
                 setTimeout(() => {
-                    console.log(`📥 [ZIP] Déclenchement du téléchargement`);
-                    downloadLink.click();
-
-                    // Nettoyer après un délai
-                    setTimeout(() => {
-                        document.body.removeChild(downloadLink);
-                        URL.revokeObjectURL(blobUrl);
-                        console.log(`🧹 [ZIP] Nettoyage effectué`);
-                    }, 1000);
-                }, 100);
-
-                console.log(`✅ [ZIP] Téléchargement lancé: ${zipFileName}`);
-                this.updateStatus(`✅ ZIP prêt ! ${reussis} fichiers (${echoues} erreurs)`);
-
-                // Désactiver les boutons
-                document.getElementById('btn-start').disabled = true;
-                document.getElementById('btn-pause').disabled = true;
+                    document.getElementById('btn-start').disabled = false;
+                }, 3000);
 
                 // Notification
                 if (typeof GM_notification !== 'undefined') {
                     GM_notification({
-                        title: '✅ Téléchargement ZIP terminé',
-                        text: `${reussis} fichiers téléchargés dans ${zipFileName}`,
+                        title: '✅ Téléchargement Enedis',
+                        text: `Période: ${dateDebut} → ${dateFin}`,
                         timeout: 5000
                     });
                 }
             } catch (error) {
-                console.error('❌ [ZIP] Erreur génération:', error);
-                this.updateStatus(`❌ Erreur lors de la génération du ZIP: ${error.message}`);
+                console.error('❌ [ENEDIS] Erreur:', error);
+                this.updateStatus(`❌ Erreur: ${error.message}`);
+                document.getElementById('btn-start').disabled = false;
             }
         }
+
+
 
         resetIDs() {
             if (confirm('🔄 Réinitialiser les IDs ?')) {
@@ -1572,7 +1303,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.11 démarré + Mode fichier unique - Téléchargement ZIP unique');
+    console.log('⚡ [ENEDIS] Script v6.0 démarré - Mode fichier unique simplifié');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt (UNE SEULE FOIS)
