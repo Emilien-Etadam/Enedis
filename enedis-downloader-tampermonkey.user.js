@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Enedis - Téléchargement Auto Historique
 // @namespace    http://tampermonkey.net/
-// @version      5.9
+// @version      5.10
 // @description  Téléchargement ZIP unique + Détection IDs (plus besoin de sauvegarder un à un)
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
@@ -1448,7 +1448,7 @@
                 });
 
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout de 60 secondes dépassé')), 60000)
+                    setTimeout(() => reject(new Error('Timeout de 120 secondes dépassé')), 120000)
                 );
 
                 const zipBlob = await Promise.race([zipBlobPromise, timeoutPromise]);
@@ -1519,7 +1519,7 @@
     // Initialisation en 2 étapes
 
     // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
-    console.log('⚡ [ENEDIS] Script v5.9 démarré + Fix generateAsync - Téléchargement ZIP unique');
+    console.log('⚡ [ENEDIS] Script v5.10 démarré + Fix timeout 120s - Téléchargement ZIP unique');
     new NetworkIDDetector();
 
     // ÉTAPE 2: Créer l'interface quand le DOM est prêt (UNE SEULE FOIS)
