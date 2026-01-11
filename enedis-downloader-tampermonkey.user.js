@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Enedis - Téléchargement Auto Historique v5
+// @name         Enedis - Téléchargement Auto Historique v5.1
 // @namespace    http://tampermonkey.net/
-// @version      5.0
+// @version      5.1
 // @description  Détection auto IDs + Saisie manuelle + Debug complet
 // @author       Next.ink / Emilien-Etadam
 // @match        https://alex.microapplications.enedis.fr/*
@@ -12,7 +12,7 @@
 // @grant        GM_addStyle
 // @grant        GM_notification
 // @grant        GM_setClipboard
-// @run-at       document-end
+// @run-at       document-start
 // ==/UserScript==
 
 (function() {
@@ -477,74 +477,82 @@
     // Détecteur amélioré avec logs
     class NetworkIDDetector {
         constructor() {
+            this.detected = false;
             this.intercepterRequetes();
+            console.log('🔍 [ENEDIS] Détecteur initialisé');
         }
 
         intercepterRequetes() {
-            const originalOpen = XMLHttpRequest.prototype.open;
             const self = this;
 
+            // Intercepter XMLHttpRequest
+            const originalOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url) {
                 if (typeof url === 'string') {
+                    // Logger uniquement les URLs Enedis
+                    if (url.includes('enedis') || url.includes('personnes') || url.includes('prms')) {
+                        console.log('🌐 [XHR]', url);
+                    }
                     self.analyserURL(url, 'XMLHttpRequest');
                 }
                 return originalOpen.apply(this, arguments);
             };
 
+            // Intercepter fetch
             const originalFetch = window.fetch;
             window.fetch = function(input) {
-                const url = typeof input === 'string' ? input : input.url;
-                self.analyserURL(url, 'fetch');
+                const url = typeof input === 'string' ? input : (input.url || '');
+                if (url) {
+                    // Logger uniquement les URLs Enedis
+                    if (url.includes('enedis') || url.includes('personnes') || url.includes('prms')) {
+                        console.log('🌐 [FETCH]', url);
+                    }
+                    self.analyserURL(url, 'fetch');
+                }
                 return originalFetch.apply(this, arguments);
             };
 
             console.log('🔍 [ENEDIS] Interception réseau activée');
             console.log('🔍 [ENEDIS] Mode debug:', CONFIG.debugMode ? 'ON' : 'OFF');
+            console.log('💡 [ENEDIS] ASTUCE: Ouvrez Network (F12) et lancez un téléchargement sur Enedis');
         }
 
         analyserURL(url, source) {
-            // Afficher toutes les URLs Enedis en mode debug
-            if (CONFIG.debugMode && url.includes('enedis')) {
-                console.log(`🔍 [${source}]`, url);
-            }
+            // Pattern principal basé sur l'URL réelle
+            // Exemple: personnes/1136528033/prms/16238060718907/donnees-energetiques/file?
+            const pattern = /personnes\/(\d+)\/prms\/(\d+)/;
 
-            // Patterns multiples pour augmenter les chances de détection
-            const patterns = [
-                // Pattern 1: file?
-                /personnes\/([^\/]+)\/prms\/([^\/\?]+)\/donnees-energetiques\/file\?/,
-                // Pattern 2: donnees-energie
-                /personnes\/([^\/]+)\/prms\/([^\/\?]+)\/donnees-energie/,
-                // Pattern 3: plus général
-                /personnes\/([^\/]+)\/prms\/([^\/\?]+)/
-            ];
+            const match = url.match(pattern);
+            if (match && !this.detected) {
+                const [, personneId, prmId] = match;
 
-            for (let i = 0; i < patterns.length; i++) {
-                const match = url.match(patterns[i]);
-                if (match) {
-                    const [, personneId, prmId] = match;
+                console.log(`🎯 [ENEDIS] IDs DÉTECTÉS !`);
+                console.log(`   └─ Personne ID: ${personneId}`);
+                console.log(`   └─ PRM ID: ${prmId}`);
 
-                    console.log(`🎯 [ENEDIS] IDs DÉTECTÉS (pattern ${i+1}):`, personneId, prmId);
+                this.detected = true; // Pour éviter de détecter plusieurs fois
 
-                    CONFIG.personneId = personneId;
-                    CONFIG.prmId = prmId;
-                    GM_setValue('personneId', personneId);
-                    GM_setValue('prmId', prmId);
+                CONFIG.personneId = personneId;
+                CONFIG.prmId = prmId;
+                GM_setValue('personneId', personneId);
+                GM_setValue('prmId', prmId);
 
-                    if (typeof GM_notification !== 'undefined') {
-                        GM_notification({
-                            title: '✅ IDs Enedis détectés !',
-                            text: `Personne: ${personneId}\nPRM: ${prmId}`,
-                            timeout: 5000
-                        });
-                    }
-
-                    if (window.downloadManager) {
-                        window.downloadManager.mettreAJourInterface();
-                        window.downloadManager.updateStatus('✅ IDs détectés automatiquement !');
-                    }
-
-                    return true;
+                // Notification
+                if (typeof GM_notification !== 'undefined') {
+                    GM_notification({
+                        title: '✅ IDs Enedis détectés !',
+                        text: `Personne: ${personneId}\nPRM: ${prmId}`,
+                        timeout: 5000
+                    });
                 }
+
+                // Mettre à jour l'interface
+                if (window.downloadManager) {
+                    window.downloadManager.mettreAJourInterface();
+                    window.downloadManager.updateStatus('✅ IDs détectés automatiquement !');
+                }
+
+                return true;
             }
 
             return false;
@@ -1165,19 +1173,24 @@
         }
     }
 
-    // Initialisation
+    // Initialisation en 2 étapes
+
+    // ÉTAPE 1: Intercepter le réseau immédiatement (document-start)
+    console.log('⚡ [ENEDIS] Script v5.1 démarré');
+    new NetworkIDDetector();
+
+    // ÉTAPE 2: Créer l'interface quand le DOM est prêt
     window.addEventListener('load', () => {
         setTimeout(() => {
-            new NetworkIDDetector();
             window.downloadManager = new DownloadManager();
 
-            console.log('⚡ [ENEDIS] Downloader v5 chargé');
+            console.log('✅ [ENEDIS] Interface chargée');
             console.log('📅 [ENEDIS] Période:', formatDate(CONFIG.dateDebut), '→', formatDate(CONFIG.dateFin));
 
             if (CONFIG.personneId && CONFIG.prmId) {
-                console.log('✅ [ENEDIS] IDs déjà enregistrés');
+                console.log('✅ [ENEDIS] IDs déjà enregistrés:', CONFIG.personneId, CONFIG.prmId);
             } else {
-                console.log('⚠️ [ENEDIS] IDs manquants - Utilisez la saisie manuelle ou la détection auto');
+                console.log('⚠️ [ENEDIS] IDs manquants - Lancez un téléchargement sur Enedis pour les détecter');
             }
         }, 1500);
     });
