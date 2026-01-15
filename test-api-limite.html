@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Limite API Enedis</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test {
+            margin: 10px 0;
+            padding: 10px;
+            background: #2a2a2a;
+            border-left: 4px solid #555;
+        }
+        .test.success {
+            border-color: #0f0;
+        }
+        .test.error {
+            border-color: #f00;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0d0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Limite API Enedis</h1>
+    <p>Personne ID: <strong>1136528033</strong></p>
+    <p>PRM ID: <strong>16238060718907</strong></p>
+
+    <div>
+        <button onclick="testerPeriode(7)">Test 7 jours</button>
+        <button onclick="testerPeriode(30)">Test 30 jours</button>
+        <button onclick="testerPeriode(90)">Test 90 jours</button>
+        <button onclick="testerPeriode(180)">Test 180 jours</button>
+        <button onclick="testerPeriode(365)">Test 365 jours</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const PERSONNE_ID = '1136528033';
+        const PRM_ID = '16238060718907';
+        const BASE_URL = 'https://alex.microapplications.enedis.fr/mes-mesures-prm/api/private/v2';
+
+        function formatDate(date) {
+            const j = date.getDate().toString().padStart(2, '0');
+            const m = (date.getMonth() + 1).toString().padStart(2, '0');
+            const a = date.getFullYear();
+            return `${a}-${m}-${j}`;
+        }
+
+        async function testerPeriode(jours) {
+            const dateDebut = new Date('2024-05-01');
+            const dateFin = new Date(dateDebut);
+            dateFin.setDate(dateFin.getDate() + jours);
+
+            const url = `${BASE_URL}/personnes/${PERSONNE_ID}/prms/${PRM_ID}/donnees-energetiques/file?mesuresTypeCode=COURBE&mesuresCorrigees=false&typeDonnees=CONS&dateDebut=${formatDate(dateDebut)}&dateFin=${formatDate(dateFin)}&format=EXCEL&segments=C5`;
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test';
+            resultDiv.innerHTML = `
+                <strong>Test ${jours} jours</strong> (${formatDate(dateDebut)} → ${formatDate(dateFin)})<br>
+                <span style="opacity: 0.5">En cours...</span>
+            `;
+            document.getElementById('results').insertBefore(resultDiv, document.getElementById('results').firstChild);
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url);
+                const duration = Date.now() - startTime;
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const size = (blob.size / 1024).toFixed(2);
+
+                    resultDiv.className = 'test success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Test ${jours} jours</strong> (${formatDate(dateDebut)} → ${formatDate(dateFin)})<br>
+                        Status: ${response.status} OK<br>
+                        Taille: ${size} Ko<br>
+                        Temps: ${duration} ms<br>
+                        <button onclick="telechargerTest(${jours}, '${formatDate(dateDebut)}', '${formatDate(dateFin)}')">📥 Télécharger</button>
+                    `;
+                } else {
+                    resultDiv.className = 'test error';
+                    resultDiv.innerHTML = `
+                        <strong>❌ Test ${jours} jours</strong> (${formatDate(dateDebut)} → ${formatDate(dateFin)})<br>
+                        Status: ${response.status} ${response.statusText}<br>
+                        Temps: ${duration} ms
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'test error';
+                resultDiv.innerHTML = `
+                    <strong>❌ Test ${jours} jours</strong> (${formatDate(dateDebut)} → ${formatDate(dateFin)})<br>
+                    Erreur: ${error.message}
+                `;
+            }
+        }
+
+        async function telechargerTest(jours, debut, fin) {
+            const url = `${BASE_URL}/personnes/${PERSONNE_ID}/prms/${PRM_ID}/donnees-energetiques/file?mesuresTypeCode=COURBE&mesuresCorrigees=false&typeDonnees=CONS&dateDebut=${debut}&dateFin=${fin}&format=EXCEL&segments=C5`;
+
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `Test_${jours}jours_${debut}_${fin}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(blobUrl);
+        }
+
+        console.log('🔍 Test API Enedis - Prêt');
+        console.log('Cliquez sur les boutons pour tester différentes périodes');
+    </script>
+</body>
+</html>
