@@ -1338,30 +1338,31 @@
         async telechargerEnZip() {
             if (!this.actif) return;
 
-            console.log('📦 [ENEDIS] Démarrage du téléchargement ZIP');
+            console.log('📦 [ENEDIS] Démarrage du téléchargement batch');
 
-            // Créer la barre de progression
             const progressHTML = `
                 <div class="enedis-progress-bar">
                     <div class="enedis-progress-fill" id="zip-progress-fill" style="width: 0%">0%</div>
                 </div>
             `;
-            this.updateStatus('🔄 Préparation du téléchargement ZIP...' + progressHTML);
+            this.updateStatus('🔄 Préparation du téléchargement...' + progressHTML);
 
-            const zip = new JSZip();
             const total = this.periodes.length;
             let reussis = 0;
             let echoues = 0;
 
             for (let i = 0; i < this.periodes.length; i++) {
                 if (!this.actif) {
-                    this.updateStatus('⏸ Téléchargement ZIP annulé');
+                    this.updateStatus('⏸ Téléchargement annulé');
                     return;
                 }
 
                 const periode = this.periodes[i];
                 const url = genererURL(periode.debut, periode.fin);
-                const fileName = `Enedis_${formatDate(periode.debut)}_${formatDate(periode.fin)}.xlsx`;
+
+                // Nom avec numéro pour garder l'ordre
+                const numero = String(i + 1).padStart(2, '0');
+                const fileName = `${numero}_Enedis_${formatDate(periode.debut)}_${formatDate(periode.fin)}.xlsx`;
 
                 try {
                     // Mise à jour de la progression
@@ -1371,19 +1372,36 @@
                         progressFill.style.width = pourcentage + '%';
                         progressFill.textContent = `${i}/${total} (${pourcentage}%)`;
                     }
-                    this.updateStatus(`📥 Téléchargement ${i + 1}/${total} : ${formatDate(periode.debut)} → ${formatDate(periode.fin)}` + progressHTML);
+                    this.updateStatus(`📥 Téléchargement ${i + 1}/${total} : ${fileName}` + progressHTML);
 
-                    console.log(`📥 [ZIP] Téléchargement ${i + 1}/${total}: ${fileName}`);
+                    console.log(`📥 [BATCH] Téléchargement ${i + 1}/${total}: ${fileName}`);
 
-                    // Télécharger le fichier avec GM_xmlhttpRequest (contourne CORS)
-                    const blob = await new Promise((resolve, reject) => {
+                    // Télécharger le fichier avec GM_xmlhttpRequest
+                    await new Promise((resolve, reject) => {
                         GM_xmlhttpRequest({
                             method: 'GET',
                             url: url,
                             responseType: 'blob',
                             onload: (response) => {
                                 if (response.status === 200) {
-                                    resolve(response.response);
+                                    // Créer un lien de téléchargement pour ce fichier
+                                    const blob = response.response;
+                                    const blobUrl = URL.createObjectURL(blob);
+                                    const downloadLink = document.createElement('a');
+                                    downloadLink.href = blobUrl;
+                                    downloadLink.download = fileName;
+                                    downloadLink.style.display = 'none';
+                                    document.body.appendChild(downloadLink);
+                                    downloadLink.click();
+
+                                    setTimeout(() => {
+                                        document.body.removeChild(downloadLink);
+                                        URL.revokeObjectURL(blobUrl);
+                                    }, 1000);
+
+                                    console.log(`✅ [BATCH] Téléchargé: ${fileName}`);
+                                    reussis++;
+                                    resolve();
                                 } else {
                                     reject(new Error(`HTTP ${response.status}`));
                                 }
@@ -1394,104 +1412,30 @@
                         });
                     });
 
-                    // Convertir le blob en Uint8Array pour compatibilité avec JSZip
-                    const arrayBuffer = await blob.arrayBuffer();
-                    const uint8Array = new Uint8Array(arrayBuffer);
-                    console.log(`🔄 [ZIP] Converti en Uint8Array: ${uint8Array.byteLength} octets`);
-
-                    // Ajouter au ZIP
-                    zip.file(fileName, uint8Array, { binary: true });
-                    reussis++;
-
-                    console.log(`✅ [ZIP] Ajouté: ${fileName}`);
-
-                    // Petit délai pour éviter de surcharger le serveur
+                    // Délai entre chaque téléchargement pour éviter de surcharger le navigateur
                     if (i < this.periodes.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
+                        await new Promise(resolve => setTimeout(resolve, 1500));
                     }
                 } catch (error) {
-                    console.error(`❌ [ZIP] Erreur ${fileName}:`, error);
+                    console.error(`❌ [BATCH] Erreur ${fileName}:`, error);
                     echoues++;
-
-                    // Créer un fichier texte d'erreur dans le ZIP
-                    const errorMsg = `Erreur lors du téléchargement de cette période:\n${error.message}\n\nURL: ${url}`;
-                    zip.file(fileName.replace('.xlsx', '_ERREUR.txt'), errorMsg);
                 }
             }
 
-            if (!this.actif) {
-                this.updateStatus('⏸ Téléchargement ZIP annulé');
-                return;
-            }
+            console.log(`✅ [BATCH] Téléchargement terminé: ${reussis} réussis, ${echoues} échoués`);
+            this.updateStatus(`✅ Terminé ! ${reussis} fichiers téléchargés (${echoues} erreurs)`);
 
-            // Générer le ZIP
-            this.updateStatus('📦 Génération du fichier ZIP...');
-            console.log(`📦 [ZIP] Début génération (${reussis} réussis, ${echoues} échoués)`);
-            console.log(`📦 [ZIP] Nombre de fichiers dans le ZIP: ${Object.keys(zip.files).length}`);
+            // Désactiver les boutons
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-pause').disabled = true;
 
-            try {
-                // Pas de compression car les Excel sont déjà compressés
-                console.log('📦 [ZIP] Appel à generateAsync...');
-
-                // Utiliser un timeout pour éviter le blocage infini
-                const zipBlobPromise = zip.generateAsync({
-                    type: 'blob',
-                    compression: 'STORE'  // Aucune compression
+            // Notification
+            if (typeof GM_notification !== 'undefined') {
+                GM_notification({
+                    title: '✅ Téléchargement terminé',
+                    text: `${reussis} fichiers téléchargés`,
+                    timeout: 5000
                 });
-
-                const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout de 60 secondes dépassé')), 60000)
-                );
-
-                const zipBlob = await Promise.race([zipBlobPromise, timeoutPromise]);
-
-                console.log('📦 [ZIP] generateAsync terminé, taille du blob:', zipBlob.size);
-
-                // Télécharger le ZIP
-                const dateDebut = formatDate(CONFIG.dateDebut).replace(/-/g, '');
-                const dateFin = formatDate(CONFIG.dateFin).replace(/-/g, '');
-                const zipFileName = `Enedis_${dateDebut}_${dateFin}_${reussis}fichiers.zip`;
-
-                console.log(`💾 [ZIP] Création du lien de téléchargement: ${zipFileName}`);
-
-                const blobUrl = URL.createObjectURL(zipBlob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = blobUrl;
-                downloadLink.download = zipFileName;
-                downloadLink.style.display = 'none';
-                document.body.appendChild(downloadLink);
-
-                // Forcer le téléchargement avec un timeout
-                setTimeout(() => {
-                    console.log(`📥 [ZIP] Déclenchement du téléchargement`);
-                    downloadLink.click();
-
-                    // Nettoyer après un délai
-                    setTimeout(() => {
-                        document.body.removeChild(downloadLink);
-                        URL.revokeObjectURL(blobUrl);
-                        console.log(`🧹 [ZIP] Nettoyage effectué`);
-                    }, 1000);
-                }, 100);
-
-                console.log(`✅ [ZIP] Téléchargement lancé: ${zipFileName}`);
-                this.updateStatus(`✅ ZIP prêt ! ${reussis} fichiers (${echoues} erreurs)`);
-
-                // Désactiver les boutons
-                document.getElementById('btn-start').disabled = true;
-                document.getElementById('btn-pause').disabled = true;
-
-                // Notification
-                if (typeof GM_notification !== 'undefined') {
-                    GM_notification({
-                        title: '✅ Téléchargement ZIP terminé',
-                        text: `${reussis} fichiers téléchargés dans ${zipFileName}`,
-                        timeout: 5000
-                    });
-                }
-            } catch (error) {
-                console.error('❌ [ZIP] Erreur génération:', error);
-                this.updateStatus(`❌ Erreur lors de la génération du ZIP: ${error.message}`);
             }
         }
 
