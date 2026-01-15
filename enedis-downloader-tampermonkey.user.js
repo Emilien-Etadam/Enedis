@@ -1091,6 +1091,7 @@
                     <div class="enedis-btn-group" style="margin-top: 6px;">
                         <button id="btn-config">⚙️</button>
                         <button id="btn-reset">🔄</button>
+                        <button id="btn-test-api">🧪 Test API</button>
                     </div>
 
                     <div id="enedis-progress"></div>
@@ -1106,6 +1107,7 @@
             document.getElementById('btn-minimize').addEventListener('click', () => this.toggleMinimize());
             document.getElementById('btn-mode-zip').addEventListener('click', () => this.changerMode(true));
             document.getElementById('btn-mode-classique').addEventListener('click', () => this.changerMode(false));
+            document.getElementById('btn-test-api').addEventListener('click', () => this.testerLimitesAPI());
 
             if (!idsDetectes) {
                 document.getElementById('btn-manual-id').addEventListener('click', () => this.manualIDManager.ouvrir());
@@ -1437,6 +1439,81 @@
                     timeout: 5000
                 });
             }
+        }
+
+        async testerLimitesAPI() {
+            if (!CONFIG.personneId || !CONFIG.prmId) {
+                this.updateStatus('⚠️ IDs manquants ! Détectez d\'abord vos IDs');
+                return;
+            }
+
+            this.updateStatus('🧪 Test des limites API en cours...');
+            console.log('🧪 [TEST] Début du test des limites API');
+
+            const tests = [7, 30, 90, 180, 365];
+            const dateDebut = new Date('2024-05-01');
+
+            for (const jours of tests) {
+                const dateFin = new Date(dateDebut);
+                dateFin.setDate(dateFin.getDate() + jours);
+
+                const url = genererURL(dateDebut, dateFin);
+
+                try {
+                    console.log(`🧪 [TEST] Test ${jours} jours: ${formatDate(dateDebut)} → ${formatDate(dateFin)}`);
+
+                    const result = await new Promise((resolve) => {
+                        const startTime = Date.now();
+                        GM_xmlhttpRequest({
+                            method: 'GET',
+                            url: url,
+                            responseType: 'blob',
+                            onload: (response) => {
+                                const duration = Date.now() - startTime;
+                                const size = (response.response.size / 1024).toFixed(2);
+                                resolve({
+                                    success: response.status === 200,
+                                    status: response.status,
+                                    size: size,
+                                    duration: duration
+                                });
+                            },
+                            onerror: (error) => {
+                                const duration = Date.now() - startTime;
+                                resolve({
+                                    success: false,
+                                    status: 'ERROR',
+                                    error: error,
+                                    duration: duration
+                                });
+                            },
+                            ontimeout: () => {
+                                resolve({
+                                    success: false,
+                                    status: 'TIMEOUT'
+                                });
+                            },
+                            timeout: 30000
+                        });
+                    });
+
+                    if (result.success) {
+                        console.log(`✅ [TEST] ${jours} jours OK - ${result.size} Ko en ${result.duration} ms`);
+                        this.updateStatus(`✅ Test ${jours}j: OK (${result.size} Ko)`);
+                    } else {
+                        console.log(`❌ [TEST] ${jours} jours ÉCHEC - Status ${result.status}`);
+                        this.updateStatus(`❌ Test ${jours}j: Échec (${result.status})`);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+
+                } catch (error) {
+                    console.error(`❌ [TEST] ${jours} jours erreur:`, error);
+                }
+            }
+
+            console.log('🧪 [TEST] Tests terminés - Consultez la console pour les résultats');
+            this.updateStatus('✅ Tests terminés ! Voir console (F12)');
         }
 
         resetIDs() {
