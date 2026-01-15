@@ -1,19 +1,19 @@
 # 🔌 Enedis Downloader - Script Tampermonkey
 
-Script automatique pour télécharger facilement vos données de consommation Enedis sur plusieurs mois.
+Script automatique pour télécharger facilement vos données de consommation Enedis en **un seul fichier**.
 
-> **🆕 Version 5.8** : Logs améliorés, meilleur gestion d'erreurs, timeout augmenté  
-> **🔧 Problème de téléchargement ZIP ?** → Consultez le **[Guide de Dépannage](./DEPANNAGE-ZIP.md)** complet
+> **🆕 Version 6.0** : Interface épurée, téléchargement fichier unique simplifié
+> **🎯 Nouveauté** : Plus besoin de gérer plusieurs fichiers, tout est téléchargé en un seul fichier Excel !
 
 ## ✨ Fonctionnalités
 
+- ✅ **Téléchargement fichier unique** : toute votre période en un seul fichier Excel
 - ✅ **Détection automatique** des identifiants (personneId, prmId)
-- ✅ **Interface graphique** moderne avec panneau flottant
+- ✅ **Interface graphique** épurée et moderne (320px)
 - ✅ **Saisie manuelle** des IDs si besoin (avec extraction depuis URL)
-- ✅ **Configuration facile** des dates et paramètres
+- ✅ **Configuration facile** des dates de début et fin
 - ✅ **Mode debug** pour dépannage
 - ✅ **Sauvegarde automatique** de votre configuration
-- ✅ **Téléchargement par lots** avec délai configurable
 
 ## 📥 Installation
 
@@ -46,11 +46,11 @@ Installez l'extension Tampermonkey pour votre navigateur :
 
 1. Connectez-vous sur [mon-compte-particulier.enedis.fr](https://mon-compte-particulier.enedis.fr/)
 2. Le panneau Enedis Downloader apparaît en haut à droite
-3. Ouvrez les **DevTools** (F12) → Onglet **Network**
-4. Sur le site Enedis, cliquez sur **"Télécharger mes données"** (n'importe quelle période)
-5. 🎉 Le script détecte automatiquement vos IDs !
-6. Configurez vos dates si besoin (bouton **⚙ Dates**)
-7. Cliquez sur **▶ Démarrer**
+3. Sur le site Enedis, cliquez sur **"Télécharger mes données"** (n'importe quelle période)
+4. 🎉 Le script détecte automatiquement vos IDs !
+5. Configurez vos dates si besoin (bouton **⚙️ Modifier les dates**)
+6. Cliquez sur **📄 Télécharger**
+7. Un seul fichier Excel est téléchargé avec toute votre période !
 
 ### Méthode 2 : Saisie manuelle
 
@@ -80,18 +80,14 @@ Les IDs seront automatiquement extraits :
 |-----------|-------------------|-------------|
 | Date début | 01/05/2024 | Début de la période à télécharger |
 | Date fin | 30/04/2025 | Fin de la période |
-| Intervalle | 7 jours | Durée de chaque fichier téléchargé |
-| Chevauchement | 1 jour | Jours en commun entre fichiers |
-| Délai | 2500 ms | Délai entre chaque téléchargement |
 
 ### Modifier la configuration
 
-Cliquez sur **⚙ Dates** pour ouvrir la modale de configuration :
+Cliquez sur **⚙️ Modifier les dates** pour ouvrir la modale de configuration :
 
 - Ajustez les dates de début et fin
-- Modifiez l'intervalle (nombre de jours par fichier)
-- Changez le délai entre téléchargements (min 1000ms)
-- L'aperçu vous indique le nombre de fichiers et la durée estimée
+- L'aperçu vous indique la période qui sera téléchargée
+- Un seul fichier Excel sera généré avec toute la période
 
 ## 🐛 Mode Debug
 
@@ -133,11 +129,12 @@ Une fois les fichiers téléchargés :
 
 Oui ! Modifiez simplement les dates dans la configuration. Le script s'adapte automatiquement.
 
-### Le navigateur bloque les téléchargements ?
+### Le fichier est trop volumineux ?
 
-Si votre navigateur bloque les téléchargements multiples :
-1. Autorisez les téléchargements multiples pour le domaine Enedis
-2. OU réduisez le nombre de fichiers en augmentant l'intervalle
+Si Enedis refuse de générer le fichier (période trop longue) :
+1. Réduisez la période (par exemple : téléchargez 6 mois à la fois)
+2. Faites plusieurs téléchargements successifs
+3. Utilisez ensuite l'outil [fusion.html](./fusion.html) pour consolider
 
 ## 🔒 Sécurité et confidentialité
 
@@ -150,13 +147,7 @@ Si votre navigateur bloque les téléchargements multiples :
 
 ### Réinitialiser la configuration
 
-Cliquez sur **🔄 Reset** pour effacer les IDs sauvegardés et redémarrer la détection.
-
-### Changer le délai entre téléchargements
-
-Si vous rencontrez des erreurs de rate limiting :
-1. Ouvrez la configuration (**⚙ Dates**)
-2. Augmentez le délai (ex: 5000ms au lieu de 2500ms)
+Cliquez sur **🔄 Reset IDs** pour effacer les IDs sauvegardés et redémarrer la détection.
 
 ### Le script ne fonctionne que sur certains domaines
 
@@ -169,9 +160,9 @@ Si Enedis utilise un autre domaine, éditez le script et ajoutez la ligne `@matc
 
 ## 📝 Notes importantes
 
-- ⚠️ Ne lancez pas plusieurs téléchargements simultanés
-- ⚠️ Restez sur la page pendant le téléchargement
-- ⚠️ Les fichiers téléchargés peuvent avoir des données en double (normal avec le chevauchement)
+- ⚠️ Pour les périodes très longues (>1 an), Enedis peut limiter la taille du fichier
+- ⚠️ Dans ce cas, faites plusieurs téléchargements sur des périodes plus courtes
+- ✅ Un seul fichier Excel est généré, pas besoin de fusion !
 
 ## 🤝 Contribution
 

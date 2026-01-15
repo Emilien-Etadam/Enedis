@@ -1,38 +1,38 @@
-# 🎯 Guide : Fusionner vos 21 fichiers Excel en 1 seul
+# 🎯 Guide : Télécharger et fusionner vos données Enedis
 
-Vous avez téléchargé 21 fichiers Excel Enedis et vous voulez les fusionner en un seul ? **Vous avez 2 solutions** :
+**Le script v6.0 télécharge automatiquement vos données en UN SEUL fichier.** Plus besoin de gérer 21 fichiers séparés !
 
 ---
 
-## ✅ **Solution 1 : Mode "Fichier unique" (NOUVEAU - v5.11)**
+## ✅ **Solution 1 : Téléchargement direct (v6.0)**
 
-### 🚀 **La plus simple : Téléchargez directement 1 seul fichier !**
+### 🚀 **La solution recommandée : 1 seul fichier téléchargé automatiquement !**
 
-#### **Mise à jour vers v5.11**
+#### **Installation / Mise à jour vers v6.0**
 1. Aller sur https://github.com/Emilien-Etadam/Enedis
 2. Cliquer sur `enedis-downloader-tampermonkey.user.js`
 3. Cliquer sur "Raw"
-4. Tampermonkey proposera la mise à jour → **"Mettre à jour"**
+4. Tampermonkey proposera l'installation ou la mise à jour → **"Installer"** ou **"Mettre à jour"**
 
 #### **Utilisation**
 1. Sur le site Enedis, **panneau en haut à droite**
-2. Cliquer sur le bouton **"📄 Unique"** (nouveau mode)
-3. Cliquer sur **"▶ Démarrer"**
+2. Configurer vos dates avec **"⚙️ Modifier les dates"**
+3. Cliquer sur **"📄 Télécharger"**
 4. **UN SEUL** fichier Excel sera téléchargé avec toute votre période !
 
 #### **Avantages**
-- ✅ **Instantané** : Pas d'attente, pas de génération
-- ✅ **1 seul fichier** : Déjà fusionné !
-- ✅ **Pas de timeout** : Téléchargement direct depuis Enedis
-- ✅ **Pas de ZIP** : Pas besoin de décompresser
+- ✅ **Instantané** : Téléchargement direct depuis l'API Enedis
+- ✅ **1 seul fichier** : Plus besoin de fusionner !
+- ✅ **Interface simplifiée** : Pas de choix de mode, ça marche directement
+- ✅ **Période complète** : Toutes vos données en un clic
 
 #### **Limites**
-- ⚠️ Enedis peut limiter la taille : **~6 mois max** recommandé
-- ⚠️ Si le fichier est trop gros, Enedis peut refuser
+- ⚠️ Enedis peut limiter la taille selon votre période
+- ⚠️ Pour les très longues périodes (>1 an), utilisez plusieurs téléchargements
 
 ---
 
-## ✅ **Solution 2 : Fusionner vos 21 fichiers existants**
+## ✅ **Solution 2 : Fusionner des fichiers existants**
 
 ### 📊 **Utilisez l'outil `fusion.html` (déjà dans le projet)**
 
@@ -76,61 +76,60 @@ Un fichier Excel avec :
 
 ## 🔍 **Comparaison des 2 solutions**
 
-| Critère | 📄 Mode "Fichier unique" | 📊 Fusion avec `fusion.html` |
+| Critère | 📄 Téléchargement v6.0 | 📊 Fusion avec `fusion.html` |
 |---------|-------------------------|------------------------------|
 | **Rapidité** | ⚡ Instantané | ⏱️ ~30 secondes |
 | **Facilité** | ✅ 1 clic | ✅ Glisser-déposer |
 | **Résultat** | 1 fichier Excel | 1 fichier Excel |
 | **Vérifications** | ❌ Aucune | ✅ Doublons, NA, gaps |
 | **Statistiques** | ❌ Non | ✅ Conso mensuelle/hebdo |
-| **Période max** | ⚠️ ~6 mois | ✅ Illimitée |
-| **Fichiers requis** | 0 (télécharge direct) | 21 fichiers déjà téléchargés |
+| **Période max** | ⚠️ Selon API Enedis | ✅ Illimitée |
+| **Fichiers requis** | 0 (télécharge direct) | Fichiers déjà téléchargés |
 
 ---
 
 ## 🎯 **Quelle solution choisir ?**
 
-### **Utilisez le mode "📄 Fichier unique" si :**
+### **Utilisez le téléchargement v6.0 si :**
 - ✅ Vous n'avez **pas encore téléchargé** les fichiers
-- ✅ Votre période est **≤ 6 mois** (ex: 4 mois dans votre cas ✅)
 - ✅ Vous voulez le résultat **le plus rapide** possible
+- ✅ Vous voulez **juste les données brutes**
 
 ### **Utilisez `fusion.html` si :**
-- ✅ Vous avez **déjà les 21 fichiers** téléchargés
+- ✅ Vous avez **déjà plusieurs fichiers** téléchargés
 - ✅ Vous voulez des **statistiques détaillées**
 - ✅ Vous voulez **vérifier la qualité** des données (NA, gaps, doublons)
-- ✅ Votre période est **> 6 mois** (Enedis peut bloquer les fichiers trop gros)
+- ✅ Vous avez des fichiers de **sources différentes** à consolider
 
 ---
 
-## 📋 **Recommandation pour votre cas**
+## 📋 **Recommandation générale**
 
-**Période : 2024-05-01 → 2024-08-30 (4 mois)**
-
-### **🏆 Solution recommandée : Mode "Fichier unique"**
+### **🏆 Solution recommandée : Téléchargement direct v6.0**
 
 **Pourquoi ?**
-- ✅ 4 mois = Largement sous la limite Enedis
 - ✅ Téléchargement instantané (pas de ZIP, pas de timeout)
 - ✅ Résultat immédiat : 1 seul fichier Excel
+- ✅ Interface simplifiée : pas de mode à choisir
 
 **Comment ?**
 ```
-1. Mettre à jour vers v5.11 (voir instructions ci-dessus)
-2. Cliquer sur "📄 Unique"
-3. Cliquer sur "▶ Démarrer"
+1. Installer/mettre à jour vers v6.0 (voir instructions ci-dessus)
+2. Configurer vos dates avec "⚙️ Modifier les dates"
+3. Cliquer sur "📄 Télécharger"
 4. Attendre 2-3 secondes
-5. Fichier téléchargé : Enedis_2024-05-01_2024-08-30.xlsx
+5. Fichier téléchargé : Enedis_[date_debut]_[date_fin].xlsx
 ```
 
 ---
 
 ## 🆘 **Aide supplémentaire**
 
-### **Mode "Fichier unique" ne fonctionne pas ?**
+### **Le téléchargement ne fonctionne pas ?**
 Erreurs possibles :
-- **"Fichier trop volumineux"** → Enedis bloque, utilisez `fusion.html` à la place
-- **"Erreur de téléchargement"** → Réessayez ou utilisez le mode ZIP
+- **"Fichier trop volumineux"** → Réduisez la période ou téléchargez en plusieurs fois
+- **"Erreur de téléchargement"** → Vérifiez que vos IDs sont bien détectés
+- **"IDs manquants"** → Utilisez "✏️ Saisie manuelle" pour entrer vos IDs
 
 ### **L'outil fusion.html ne fonctionne pas ?**
 Vérifications :
@@ -141,10 +140,9 @@ Vérifications :
 ### **Questions ?**
 - 💬 Ouvrir une issue sur GitHub
 - 📖 Consulter le [README](./README.md)
-- 🔧 Consulter le [guide de dépannage](./DEPANNAGE-ZIP.md)
 
 ---
 
-**Dernière mise à jour** : 2025-01-11  
-**Version du script** : 5.11 (Mode fichier unique)  
+**Dernière mise à jour** : 2026-01-15
+**Version du script** : 6.0 (Téléchargement fichier unique)
 **Créé avec ❤️ pour simplifier l'exploitation de vos données Enedis**
