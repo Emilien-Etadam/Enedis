@@ -861,8 +861,8 @@
                 if (e.target === modal) this.fermer();
             });
 
-            ['config-date-debut', 'config-date-fin', 'config-intervalle'].forEach(id => {
-                document.getElementById(id).addEventListener('input', () => this.mettreAJourApercu());
+            ['config-date-debut', 'config-date-fin'].forEach(id => {
+                document.getElementById(id)?.addEventListener('input', () => this.mettreAJourApercu());
             });
 
             this.mettreAJourApercu();
@@ -895,9 +895,6 @@
         ouvrir() {
             document.getElementById('config-date-debut').value = formatDateInput(CONFIG.dateDebut);
             document.getElementById('config-date-fin').value = formatDateInput(CONFIG.dateFin);
-            document.getElementById('config-intervalle').value = CONFIG.intervalleJours;
-            document.getElementById('config-chevauchement').value = CONFIG.chevauchement;
-            document.getElementById('config-delai').value = CONFIG.delaiMs;
 
             this.mettreAJourApercu();
             document.getElementById('enedis-config-modal').classList.add('show');
@@ -980,7 +977,7 @@
 
             panel.innerHTML = `
                 <button class="enedis-minimize" id="btn-minimize">−</button>
-                <h3>⚡ Enedis Downloader</h3>
+                <h3>⚡ Enedis Downloader <span style="font-size: 10px; opacity: 0.6; font-weight: normal;">v6.0</span></h3>
                 <div class="enedis-content">
                     <div class="enedis-section">
                         <div class="enedis-section-title">Identifiants</div>
